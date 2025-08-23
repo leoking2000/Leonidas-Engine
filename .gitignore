@@ -1,0 +1,7 @@
+.vs/
+.vscode/
+out/
+bin/
+build/
+.idea/
+Makefile
