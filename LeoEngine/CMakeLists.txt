@@ -12,8 +12,7 @@ file(GLOB_RECURSE MY_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/LEO/
 add_library("${PROJECT_NAME}" STATIC ${MY_SOURCES})
 set_property(TARGET "${PROJECT_NAME}" PROPERTY CXX_STANDARD 23)
 
-# use a raylib implimitation
-target_compile_definitions("${PROJECT_NAME}" PUBLIC RAYLIB_IMPL)
+target_precompile_headers("${PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/LEO/Utilities/pch.h")
 
 if(NOT PRODUCTION_BUILD)
 	# This is useful to get an ASSETS_PATH in your IDE during development
