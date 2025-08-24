@@ -81,6 +81,15 @@ namespace LEO::WIN
 		LEOLOGVERBOSE("Window title set to {}", title.data());
 	}
 
+	i32 Width()
+	{
+		return GetScreenWidth();
+	}
+
+	i32 Height()
+	{
+		return GetScreenHeight();
+	}
 
 	// Drawing-related functions //
 
@@ -103,6 +112,18 @@ namespace LEO::WIN
 	{
 		rlImGuiEnd();
 		EndDrawing();
+	}
+
+	// Draw a color-filled circle
+	void RenderCircle(const glm::vec2& pos, f32 radius, LeoColor color)
+	{
+		DrawCircle(int(pos.x), int(pos.y), radius, Color{ color.r, color.g, color.b, color.a });
+	}
+
+	// Draw a color-filled triangle (vertex in counter-clockwise order!)
+	void RenderTriangle(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c, LeoColor color)
+	{
+		DrawTriangle({ a.x, a.y }, { b.x, b.y }, { c.x, c.y }, Color{ color.r, color.g, color.b, color.a });
 	}
 
 

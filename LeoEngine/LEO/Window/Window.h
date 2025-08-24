@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <glm/glm.hpp>
 #include "Utilities/Types.h"
 
 namespace LEO::WIN
@@ -45,15 +44,18 @@ namespace LEO::WIN
 
 	// Window-related functions
 
-	void Initialization(WindowsParameters win_params);               // Initialize window and OpenGL context
-	void Initialization(u32 width, u32 height, std::string_view title, u32 flags = FLAG_DEFAULT); // Initialize window and OpenGL context
-	void Terminate();                                                // Close window and unload OpenGL context
-
-	bool ShouldClose();                                              // Check if application should close (KEY_ESCAPE pressed or windows close icon clicked)
-	void SetTitle(std::string_view title);                           // Set title for window
-
-	// Drawing-related functions
-	void SetClearColor(LeoColor color);                                 // Set background color (framebuffer clear color)
-	void StartFrame();                                               // Setup canvas (framebuffer) to start drawing
-	void EndFrame();                                                 // End canvas drawing and swap buffers (double buffering)
+	void Initialization(WindowsParameters win_params);                                                 // Initialize window and OpenGL context
+	void Initialization(u32 width, u32 height, std::string_view title, u32 flags = FLAG_DEFAULT);      // Initialize window and OpenGL context
+	void Terminate();                                                                                  // Close window and unload OpenGL context																                              
+	bool ShouldClose();                                                                                // Check if application should close (KEY_ESCAPE pressed or windows close icon clicked)
+	void SetTitle(std::string_view title);                                                             // Set title for window
+	i32  Width();                                                                                      // Get current window width
+	i32  Height();                                                                                     // Get current window height
+																	                                   
+	// Drawing-related functions									                                   
+	void SetClearColor(LeoColor color);                                                                // Set background color (framebuffer clear color)
+	void StartFrame();                                                                                 // Setup canvas (framebuffer) to start drawing
+	void EndFrame();                                                                                   // End canvas drawing and swap buffers (double buffering)
+	void RenderCircle(const glm::vec2& pos, f32 radius, LeoColor color);                               // Draw a color-filled circle
+	void RenderTriangle(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c, LeoColor color);   // Draw a color-filled triangle (vertex in counter-clockwise order!)
 }
