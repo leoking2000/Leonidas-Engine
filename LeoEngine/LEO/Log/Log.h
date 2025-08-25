@@ -5,9 +5,6 @@
 
 namespace LEO::LOG
 {
-    void      Initialization(IChannel* channel = nullptr);
-    void      Terminate();
-    void      SetDefaultLogChannel(IChannel* channel = nullptr);
     IChannel& GetDefaultLogChannel();
 }
 

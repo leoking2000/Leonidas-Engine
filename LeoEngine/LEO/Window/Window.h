@@ -41,20 +41,59 @@ namespace LEO::WIN
 	#define LEO_ERROR_COLOR	 LEO::WIN::LeoColor{ 255,   0, 255, 255 }
 
 
-	// Window-related functions
+	// Window-related functions //
 
-	void Initialization(WindowsParameters win_params);                                                 // Initialize window and OpenGL context
-	void Initialization(u32 width, u32 height, std::string_view title, u32 flags = FLAG_DEFAULT);      // Initialize window and OpenGL context
-	void Terminate();                                                                                  // Close window and unload OpenGL context																                              
-	bool ShouldClose();                                                                                // Check if application should close (KEY_ESCAPE pressed or windows close icon clicked)
-	void SetTitle(std::string_view title);                                                             // Set title for window
-	i32  Width();                                                                                      // Get current window width
-	i32  Height();                                                                                     // Get current window height
-																	                                   
-	// Drawing-related functions									                                   
-	void SetClearColor(LeoColor color);                                                                // Set background color (framebuffer clear color)
-	void StartFrame();                                                                                 // Setup canvas (framebuffer) to start drawing
-	void EndFrame();                                                                                   // End canvas drawing and swap buffers (double buffering)
-	void RenderCircle(const glm::vec2& pos, f32 radius, LeoColor color);                               // Draw a color-filled circle
-	void RenderTriangle(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c, LeoColor color);   // Draw a color-filled triangle (vertex in counter-clockwise order!)
+	// Initialize window and OpenGL context
+	void CreateWindow(WindowsParameters win_params);
+
+	// Initialize window and OpenGL context
+	void CreateWindow(u32 width, u32 height, std::string_view title, u32 flags = FLAG_DEFAULT);    
+
+	// Close window and unload OpenGL context
+	void DestroyWindow();
+
+	// Check if application should close (KEY_ESCAPE pressed or windows close icon clicked)
+	bool ShouldClose();
+
+	// Set title for window
+	void SetTitle(std::string_view title);
+
+	// Get current window width
+	i32  Width();
+
+	// Get current window height
+	i32  Height();
+
+
+	// Timing-related functions //
+
+	// Set target FPS (maximum)
+	void SetFPSTarget(u32 fps);
+
+	// Get time in seconds for last frame drawn (delta time)
+	f32  DeltaTime();
+	
+	// Get elapsed time in seconds since CreateWindow()
+	f64  GlobalTime();
+	
+	// Get current FPS
+	u32  CurrentFPS();
+
+
+	// Drawing-related functions
+
+	// Set background color (framebuffer clear color)
+	void SetClearColor(LeoColor color);
+
+	// Setup canvas (framebuffer) to start drawing and clears background
+	void StartFrame();
+
+	// End canvas drawing and swap buffers (double buffering)
+	void EndFrame();
+
+	// Draw a color-filled circle
+	void RenderCircle(const glm::vec2& pos, f32 radius, LeoColor color);
+
+	// Draw a color-filled triangle (vertex in counter-clockwise order!)
+	void RenderTriangle(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c, LeoColor color);
 }

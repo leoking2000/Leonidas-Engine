@@ -16,8 +16,14 @@ void GameInit(GameState& s)
 void GameUpdate(GameState& s)
 {
 	ImGui::Begin("Game Debug");
+	ImGui::Text("FPS: %i", LEO::WIN::CurrentFPS());
 	ImGui::DragFloat2("Player Pos:", glm::value_ptr(s.player_pos));
 	ImGui::DragFloat("Player Radius:", &s.player_radius);
+	if (ImGui::Button("Rand") || true)
+	{
+		s.player_pos = LEO::UTL::RandFloat2(100.0f, 900.0f);
+		s.player_radius = LEO::UTL::RandFloat(20.0f, 100.0f);
+	}
 	ImGui::End();
 }
 
@@ -30,15 +36,15 @@ void GameDraw(GameState& s)
 
 int main(void)
 {
-	LEO::LOG::Initialization();
 	LEO::LOG::GetDefaultLogChannel().SetLoggingLevel(LEO::LOG::Level::DEBUG);
 
-	LEO::WIN::Initialization(1600, 900, "Leonidas Engine", LEO::WIN::FLAG_VSYNC);
+	LEO::WIN::CreateWindow(1600, 900, "Leonidas Engine");
 	LEO::WIN::SetClearColor(LEO_BLACK);
+	LEO::WIN::SetFPSTarget(60);
 
 	i32 year = -2025;
 	year = glm::abs(year);
-	
+
 	LEO::UTL::Timer timer;
 	LEOLOGVERBOSE("The year is {}", year);
 	LEOLOGDEBUG("Leonidas Engine {}!!!", year);
@@ -61,8 +67,7 @@ int main(void)
 	}
 
 
-	LEO::WIN::Terminate();
-	LEO::LOG::Terminate();
+	LEO::WIN::DestroyWindow();
 
 	return 0;
 }

@@ -11,9 +11,8 @@ namespace LEO::WIN
 
 	// Window-related functions //
 
-
 	// Initialize window and OpenGL context
-	void Initialization(WindowsParameters win_params)
+	void CreateWindow(WindowsParameters win_params)
 	{
 		SetTraceLogLevel(LOG_ERROR);
 
@@ -48,7 +47,7 @@ namespace LEO::WIN
 	}
 
 	// Initialize window and OpenGL context
-	void Initialization(u32 width, u32 height, std::string_view title, u32 flags)
+	void CreateWindow(u32 width, u32 height, std::string_view title, u32 flags)
 	{
 		WindowsParameters params;
 		params.win_height = width;
@@ -56,11 +55,11 @@ namespace LEO::WIN
 		params.win_init_flags = flags;
 		params.win_title = title.data();
 
-		Initialization(params);
+		CreateWindow(params);
 	}
 
 	// Close window and unload OpenGL context
-	void Terminate()
+	void DestroyWindow()
 	{
 		rlImGuiShutdown();
 		CloseWindow();
@@ -91,6 +90,33 @@ namespace LEO::WIN
 		return GetScreenHeight();
 	}
 
+	// Timing-related functions //
+
+	// Set target FPS (maximum)
+	void SetFPSTarget(u32 fps)
+	{
+		SetTargetFPS(fps);
+	}
+
+	// Get time in seconds for last frame drawn (delta time)
+	f32  DeltaTime()
+	{
+		return GetFrameTime();
+	}
+
+	// Get elapsed time in seconds since CreateWindow()
+	f64  GlobalTime()
+	{
+		return GetTime();
+	}
+
+	// Get current FPS
+	u32  CurrentFPS()
+	{
+		return GetFPS();
+	}
+
+
 	// Drawing-related functions //
 
 	void SetClearColor(LeoColor color)
@@ -98,7 +124,7 @@ namespace LEO::WIN
 		g_clear_color = color;
 	}
 
-	// Setup canvas (framebuffer) to start drawing
+	// Setup canvas (framebuffer) to start drawing and clears background
 	void StartFrame()
 	{
 		BeginDrawing();
