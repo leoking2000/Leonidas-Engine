@@ -16,14 +16,18 @@ void GameInit(GameState& s)
 void GameUpdate(GameState& s)
 {
 	ImGui::Begin("Game Debug");
+
 	ImGui::Text("FPS: %i", LEO::WIN::CurrentFPS());
+
 	ImGui::DragFloat2("Player Pos:", glm::value_ptr(s.player_pos));
 	ImGui::DragFloat("Player Radius:", &s.player_radius);
-	if (ImGui::Button("Rand") || true)
+
+	if (ImGui::Button("Rand"))
 	{
 		s.player_pos = LEO::UTL::RandFloat2(100.0f, 900.0f);
 		s.player_radius = LEO::UTL::RandFloat(20.0f, 100.0f);
 	}
+
 	ImGui::End();
 }
 
