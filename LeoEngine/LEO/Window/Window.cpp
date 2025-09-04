@@ -52,7 +52,7 @@ namespace LEO::WIN
 	void CreateWindow(u32 width, u32 height, std::string_view title, u32 flags)
 	{
 		WindowsParameters params;
-		params.win_height = width;
+		params.win_width = width;
 		params.win_height = height;
 		params.win_init_flags = flags;
 		params.win_title = title.data();

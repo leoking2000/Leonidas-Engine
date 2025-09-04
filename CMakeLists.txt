@@ -17,3 +17,4 @@ add_subdirectory(thirdparty/glm)            # math library
 
 add_subdirectory(LeoEngine)
 add_subdirectory(Projects/SandBox)
+add_subdirectory(Projects/Asteroids)
