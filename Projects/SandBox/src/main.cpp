@@ -5,6 +5,7 @@ struct GameState
 {
 	glm::vec2 player_pos;
 	f32       player_radius;
+	bool      game_over = false;
 };
 
 void GameInit(GameState& s)
@@ -15,6 +16,7 @@ void GameInit(GameState& s)
 
 void GameUpdate(GameState& s)
 {
+#if 0
 	ImGui::Begin("Game Debug");
 
 	ImGui::Text("FPS: %i", LEO::WIN::CurrentFPS());
@@ -29,6 +31,35 @@ void GameUpdate(GameState& s)
 	}
 
 	ImGui::End();
+#endif
+
+	if (LEO::WIN::KeyDown(LEO::WIN::ESCAPE))
+	{
+		s.game_over = true;
+	}
+
+	if (LEO::WIN::KeyDown(LEO::WIN::W))
+	{
+		s.player_pos.y -= s.player_radius * 0.1f;
+	}
+	if (LEO::WIN::KeyDown(LEO::WIN::S))
+	{
+		s.player_pos.y += s.player_radius * 0.1f;
+	}
+
+	if (LEO::WIN::KeyDown(LEO::WIN::D))
+	{
+		s.player_pos.x += s.player_radius * 0.1f;
+	}
+	if (LEO::WIN::KeyDown(LEO::WIN::A))
+	{
+		s.player_pos.x -= s.player_radius * 0.1f;
+	}
+
+	if (LEO::WIN::MouseButtonPressed(LEO::WIN::MOUSE_BUTTON_LEFT))
+	{
+		s.player_pos = LEO::WIN::MousePosition();
+	}
 }
 
 void GameDraw(GameState& s)
@@ -42,13 +73,13 @@ int main(void)
 {
 	LEO::LOG::GetDefaultLogChannel().SetLoggingLevel(LEO::LOG::Level::DEBUG);
 
-	LEO::WIN::CreateWindow(1600, 900, "Leonidas Engine");
+	LEO::WIN::CreateWindow(1600, 900, "Leonidas Engine", LEO::WIN::FLAG_RESIZABLE);
 	LEO::WIN::SetClearColor(LEO_BLACK);
 	LEO::WIN::SetFPSTarget(60);
 
+#if 0
 	i32 year = -2025;
 	year = glm::abs(year);
-
 	LEO::UTL::Timer timer;
 	LEOLOGVERBOSE("The year is {}", year);
 	LEOLOGDEBUG("Leonidas Engine {}!!!", year);
@@ -56,11 +87,12 @@ int main(void)
 
 	LEOCHECKF(year == 2025, "wrong year!!!").LEOWATCH(year);
 	LEOASSERT(year == 2025, "wrong year!!!").LEOWATCH(year);
+#endif
 
 	GameState s;
 	GameInit(s);
 
-	while (!LEO::WIN::ShouldClose())
+	while (!LEO::WIN::ShouldClose() && !s.game_over)
 	{
 		LEO::WIN::StartFrame();
 		

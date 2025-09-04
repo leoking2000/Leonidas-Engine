@@ -43,6 +43,8 @@ namespace LEO::WIN
 
 		rlImGuiSetup(true);
 
+		SetExitKey(KEY_NULL);
+
 		LEOLOGINFO("Window created with size: {} x {}", win_params.win_width, win_params.win_height);
 	}
 
@@ -150,6 +152,27 @@ namespace LEO::WIN
 	void RenderTriangle(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c, LeoColor color)
 	{
 		DrawTriangle({ a.x, a.y }, { b.x, b.y }, { c.x, c.y }, Color{ color.r, color.g, color.b, color.a });
+	}
+
+	// Input Handling Functions //
+
+	// Check if a key is being pressed
+	bool KeyDown(keyboard_key key)
+	{
+		return IsKeyDown((int)key);
+	}
+
+	// Check if a mouse button has been pressed once
+	bool MouseButtonPressed(mouse_key key)
+	{
+		return IsMouseButtonPressed((int)key);
+	}
+
+	// Get mouse position XY
+	glm::vec2 MousePosition()
+	{
+		Vector2 v = GetMousePosition();
+		return { v.x, v.y };
 	}
 
 
