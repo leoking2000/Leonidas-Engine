@@ -10,77 +10,77 @@ struct GameState
 
 void GameInit(GameState& s)
 {
-	s.player_pos = glm::vec2(LEO::WIN::Width() / 2.0f, LEO::WIN::Height() / 2.0f);
-	s.player_radius = LEO::WIN::Width() * 0.01f;
+	s.player_pos = glm::vec2(LEO::WinWidth() / 2.0f, LEO::WinHeight() / 2.0f);
+	s.player_radius = LEO::WinWidth() * 0.01f;
 }
 
 void GameUpdate(GameState& s)
 {
-#if 0
+#if 1
 	ImGui::Begin("Game Debug");
 
-	ImGui::Text("FPS: %i", LEO::WIN::CurrentFPS());
+	ImGui::Text("FPS: %i", LEO::CurrentFPS());
 
 	ImGui::DragFloat2("Player Pos:", glm::value_ptr(s.player_pos));
 	ImGui::DragFloat("Player Radius:", &s.player_radius);
 
 	if (ImGui::Button("Rand"))
 	{
-		s.player_pos = LEO::UTL::RandFloat2(100.0f, 900.0f);
-		s.player_radius = LEO::UTL::RandFloat(20.0f, 100.0f);
+		s.player_pos = LEO::RandFloat2(100.0f, 900.0f);
+		s.player_radius = LEO::RandFloat(20.0f, 100.0f);
 	}
 
 	ImGui::End();
 #endif
 
-	if (LEO::WIN::KeyDown(LEO::WIN::ESCAPE))
+	if (LEO::KeyDown(LEO::KEY_ESCAPE))
 	{
 		s.game_over = true;
 	}
 
-	if (LEO::WIN::KeyDown(LEO::WIN::W))
+	if (LEO::KeyDown(LEO::KEY_W))
 	{
 		s.player_pos.y -= s.player_radius * 0.1f;
 	}
-	if (LEO::WIN::KeyDown(LEO::WIN::S))
+	if (LEO::KeyDown(LEO::KEY_S))
 	{
 		s.player_pos.y += s.player_radius * 0.1f;
 	}
 
-	if (LEO::WIN::KeyDown(LEO::WIN::D))
+	if (LEO::KeyDown(LEO::KEY_D))
 	{
 		s.player_pos.x += s.player_radius * 0.1f;
 	}
-	if (LEO::WIN::KeyDown(LEO::WIN::A))
+	if (LEO::KeyDown(LEO::KEY_A))
 	{
 		s.player_pos.x -= s.player_radius * 0.1f;
 	}
 
-	if (LEO::WIN::MouseButtonPressed(LEO::WIN::MOUSE_BUTTON_LEFT))
+	if (LEO::MouseButtonPressed(LEO::MOUSE_BUTTON_RIGHT))
 	{
-		s.player_pos = LEO::WIN::MousePosition();
+		s.player_pos = LEO::MousePosition();
 	}
 }
 
 void GameDraw(GameState& s)
 {
-	LEO::WIN::RenderCircle(s.player_pos, s.player_radius, LEO_DARKGRAY);
-	LEO::WIN::RenderTriangle({ 100.0f, 100.0f }, { 100.0f, 200.0f }, { 200.0f, 200.0f }, LEO_FORESTGREEN);
+	LEO::RenderCircle(s.player_pos, s.player_radius, LEO_DARKGRAY);
+	LEO::RenderTriangle({ 100.0f, 100.0f }, { 100.0f, 200.0f }, { 200.0f, 200.0f }, LEO_FORESTGREEN);
 }
 
 
 int main(void)
 {
-	LEO::LOG::GetDefaultLogChannel().SetLoggingLevel(LEO::LOG::Level::DEBUG);
+	LEO::GetDefaultLogChannel().SetLoggingLevel(LEO::LogLevel::DEBUG);
 
-	LEO::WIN::CreateWindow(1600, 900, "Leonidas Engine", LEO::WIN::FLAG_RESIZABLE);
-	LEO::WIN::SetClearColor(LEO_BLACK);
-	LEO::WIN::SetFPSTarget(60);
+	LEO::CreateWindow(1600, 900, "Leonidas Engine", LEO::WIN_FLAG_RESIZABLE);
+	LEO::SetClearColor(LEO_BLACK);
+	LEO::SetFPSTarget(60);
 
-#if 0
+#if 1
 	i32 year = -2025;
 	year = glm::abs(year);
-	LEO::UTL::Timer timer;
+	LEO::Timer timer;
 	LEOLOGVERBOSE("The year is {}", year);
 	LEOLOGDEBUG("Leonidas Engine {}!!!", year);
 	LEOLOGDEBUG("Log time: {}ms", timer.ElapsedMillis());
@@ -92,18 +92,18 @@ int main(void)
 	GameState s;
 	GameInit(s);
 
-	while (!LEO::WIN::ShouldClose() && !s.game_over)
+	while (!LEO::ShouldCloseWindow() && !s.game_over)
 	{
-		LEO::WIN::StartFrame();
+		LEO::StartFrame();
 		
 		GameUpdate(s);
 		GameDraw(s);
 
-		LEO::WIN::EndFrame();
+		LEO::EndFrame();
 	}
 
 
-	LEO::WIN::DestroyWindow();
+	LEO::DestroyWindow();
 
 	return 0;
 }

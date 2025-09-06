@@ -1,7 +1,7 @@
 #pragma once
 #include <chrono>
 
-namespace LEO::UTL
+namespace LEO
 {
 	class Timer
 	{

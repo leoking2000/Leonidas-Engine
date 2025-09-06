@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Channel.h"
 
-namespace LEO::LOG
+namespace LEO
 {
     void ConsoleChannel::Submit(const Entry& e) const
     {
@@ -9,13 +9,18 @@ namespace LEO::LOG
             return;
         }
 
-        std::cout << GetLevelName(e.level) << e.note;
+        std::cout << GetLogLevelName(e.level) << e.note;
         std::cout << " (" << e.sourceFunctionName << " " << e.sourceLine << ")" << std::endl;
         //std::cout << "\n" << "(" << e.sourceFile << " " << e.sourceFunctionName << " " << e.sourceLine << ")" << std::endl;
     }
 
-    void ConsoleChannel::SetLoggingLevel(Level level)
+    void ConsoleChannel::SetLoggingLevel(LogLevel level)
     {
         m_level = level;
+    }
+
+    void ConsoleChannel::Flush()
+    {
+        std::cout.flush();
     }
 }

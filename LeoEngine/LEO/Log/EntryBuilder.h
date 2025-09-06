@@ -1,7 +1,7 @@
 #pragma once
 #include "Entry.h"
 
-namespace LEO::LOG
+namespace LEO
 {
     class IChannel;
 
@@ -11,9 +11,9 @@ namespace LEO::LOG
         EntryBuilder(const char* file, const char* functionName, int line);
         ~EntryBuilder();
 
-        EntryBuilder& LogLevel(Level l);
-        EntryBuilder& Note(std::string n = "");
-        EntryBuilder& Channel(const IChannel* cha);
+        EntryBuilder& SetLogLevel(LogLevel l);
+        EntryBuilder& SetMessage(std::string n = "");
+        EntryBuilder& SetChannel(const IChannel* cha);
 
         EntryBuilder& Verbose(std::string n = "");
         EntryBuilder& Debug(std::string n = "");

@@ -1,15 +1,15 @@
 #pragma once
 #include <string>
-#include "Level.h"
+#include "LogLevel.h"
 
-namespace LEO::LOG
+namespace LEO
 {
     struct Entry
     {
-        Level level = Level::NONE;
+        LogLevel level = LogLevel::NONE;
         std::string note = "";
         const char* sourceFile = "";
         const char* sourceFunctionName = "";
-        int sourceLine = 0;
+        i32 sourceLine = 0;
     };
 }

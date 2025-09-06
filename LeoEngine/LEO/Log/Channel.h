@@ -1,25 +1,27 @@
 #pragma once
 #include "Entry.h"
 
-namespace LEO::LOG
+namespace LEO
 {
     class IChannel
     {
     public:
-        virtual void Submit(const Entry& e) const = 0;
-        virtual void SetLoggingLevel(Level level) = 0;
+        virtual void Submit(const Entry& e) const    = 0;
+        virtual void SetLoggingLevel(LogLevel level) = 0;
+        virtual void Flush() {}
 
-        virtual ~IChannel() = default;
+        virtual ~IChannel() { Flush(); }
     };
 
     class ConsoleChannel : public IChannel
     {
     public:
-        void Submit(const Entry& e) const override;
-        virtual void SetLoggingLevel(Level level);
+        virtual void Submit(const Entry& e) const override;
+        virtual void SetLoggingLevel(LogLevel level) override;
+        virtual void Flush() override;
 
         ~ConsoleChannel() {};
     private:
-        Level m_level = Level::INFO;
+        LogLevel m_level = LogLevel::INFO;
     };
 }

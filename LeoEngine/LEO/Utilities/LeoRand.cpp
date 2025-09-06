@@ -1,7 +1,7 @@
 #include <random>
 #include "LeoRand.h"
 
-namespace LEO::UTL
+namespace LEO
 {
 	static std::mt19937 rng{ std::random_device{}() }; // Default seeded with random_device
 

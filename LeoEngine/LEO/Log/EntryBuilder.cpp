@@ -2,34 +2,36 @@
 #include "Channel.h"
 #include <iostream>
 
-namespace LEO::LOG
+namespace LEO
 {
     EntryBuilder::EntryBuilder(const char* file, const char* functionName, int line)
         :
-        Entry{ Level::NONE, "", file, functionName, line}
+        Entry{ LogLevel::NONE, "", file, functionName, line}
     {}
 
     EntryBuilder::~EntryBuilder()
     {
+        assert(m_channel != nullptr);
+
         if (m_channel)
         {
             m_channel->Submit(*this);
         }
     }
 
-    EntryBuilder& EntryBuilder::LogLevel(Level l)
+    EntryBuilder& EntryBuilder::SetLogLevel(LogLevel l)
     {
         level = l;
         return *this;
     }
 
-    EntryBuilder& EntryBuilder::Note(std::string n)
+    EntryBuilder& EntryBuilder::SetMessage(std::string n)
     {
         note = std::move(n);
         return *this;
     }
 
-    EntryBuilder& EntryBuilder::Channel(const IChannel* cha)
+    EntryBuilder& EntryBuilder::SetChannel(const IChannel* cha)
     {
         m_channel = cha;
         return *this;
@@ -37,42 +39,42 @@ namespace LEO::LOG
 
     EntryBuilder& EntryBuilder::Verbose(std::string n)
     {
-        level = Level::VERBOSE;
+        level = LogLevel::VERBOSE;
         note = std::move(n);
         return *this;
     }
 
     EntryBuilder& EntryBuilder::Debug(std::string n)
     {
-        level = Level::DEBUG;
+        level = LogLevel::DEBUG;
         note = std::move(n);
         return *this;
     }
 
     EntryBuilder& EntryBuilder::Info(std::string n)
     {
-        level = Level::INFO;
+        level = LogLevel::INFO;
         note = std::move(n);
         return *this;
     }
 
     EntryBuilder& EntryBuilder::Warn(std::string n)
     {
-        level = Level::WARN;
+        level = LogLevel::WARN;
         note = std::move(n);
         return *this;
     }
 
     EntryBuilder& EntryBuilder::Error(std::string n)
     {
-        level = Level::ERROR;
+        level = LogLevel::ERROR;
         note = std::move(n);
         return *this;
     }
 
     EntryBuilder& EntryBuilder::Fatal(std::string n)
     {
-        level = Level::FATAL;
+        level = LogLevel::FATAL;
         note = std::move(n);
         return *this;
     }

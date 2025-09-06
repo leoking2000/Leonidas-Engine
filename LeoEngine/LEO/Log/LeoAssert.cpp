@@ -1,6 +1,6 @@
 #include "Log.h"
 
-namespace LEO::LOG
+namespace LEO
 {
 	Assertion::Assertion(const std::string& expression, const char* file, const char* functionName, int line, Consequence con)
 		:
@@ -15,9 +15,9 @@ namespace LEO::LOG
 	Assertion::~Assertion()
 	{
 		EntryBuilder{ m_sourceFile, m_sourceFunctionName, m_sourceLine }
-			.Channel(&GetDefaultLogChannel())
-			.LogLevel(m_consequence == Consequence::Terminate ? Level::FATAL : Level::ERROR)
-			.Note(m_stream.str());
+			.SetChannel(&GetDefaultLogChannel())
+			.SetLogLevel(m_consequence == Consequence::Terminate ? LogLevel::FATAL : LogLevel::ERROR)
+			.SetMessage(m_stream.str());
 
 		if (m_consequence == Consequence::Terminate)
 		{

@@ -3,11 +3,10 @@
 #include "Window.h"
 #include "Log/Log.h"
 
-// todo: have a direct3D 12 implimitation
 
-namespace LEO::WIN
+namespace LEO
 {
-	static LeoColor g_clear_color = LEO_BLACK;
+	static Color g_clear_color = LEO_BLACK;
 
 	// Window-related functions //
 
@@ -17,15 +16,15 @@ namespace LEO::WIN
 		SetTraceLogLevel(LOG_ERROR);
 
 		u32 raylib_flag = 0;
-		if (win_params.win_init_flags & FLAG_RESIZABLE)
+		if (win_params.win_init_flags & WIN_FLAG_RESIZABLE)
 		{
 			raylib_flag |= FLAG_WINDOW_RESIZABLE;
 		}
-		if (win_params.win_init_flags & FLAG_VSYNC)
+		if (win_params.win_init_flags & WIN_FLAG_VSYNC)
 		{
 			raylib_flag |= FLAG_VSYNC_HINT;
 		}
-		if (win_params.win_init_flags & FLAG_FULLSCREEN)
+		if (win_params.win_init_flags & WIN_FLAG_FULLSCREEN)
 		{
 			raylib_flag |= FLAG_FULLSCREEN_MODE;
 			win_params.win_width = GetScreenWidth();
@@ -70,24 +69,24 @@ namespace LEO::WIN
 	}
 
 	// Check if application should close (KEY_ESCAPE pressed or windows close icon clicked)
-	bool ShouldClose()
+	bool ShouldCloseWindow()
 	{
 		return WindowShouldClose();
 	}
 
 	// Set title for window
-	void SetTitle(std::string_view title)
+	void SetWinTitle(std::string_view title)
 	{
 		SetWindowTitle(title.data());
 		LEOLOGVERBOSE("Window title set to {}", title.data());
 	}
 
-	i32 Width()
+	i32 WinWidth()
 	{
 		return GetScreenWidth();
 	}
 
-	i32 Height()
+	i32 WinHeight()
 	{
 		return GetScreenHeight();
 	}
@@ -121,7 +120,7 @@ namespace LEO::WIN
 
 	// Drawing-related functions //
 
-	void SetClearColor(LeoColor color)
+	void SetClearColor(Color color)
 	{
 		g_clear_color = color;
 	}
@@ -132,7 +131,7 @@ namespace LEO::WIN
 		BeginDrawing();
 		rlImGuiBegin();
 
-		ClearBackground(Color{ g_clear_color.r, g_clear_color.g, g_clear_color.b, g_clear_color.a });
+		ClearBackground({ g_clear_color.r, g_clear_color.g, g_clear_color.b, g_clear_color.a });
 	}
 
 	// End canvas drawing and swap buffers (double buffering)
@@ -143,15 +142,15 @@ namespace LEO::WIN
 	}
 
 	// Draw a color-filled circle
-	void RenderCircle(const glm::vec2& pos, f32 radius, LeoColor color)
+	void RenderCircle(const glm::vec2& pos, f32 radius, Color color)
 	{
-		DrawCircle(int(pos.x), int(pos.y), radius, Color{ color.r, color.g, color.b, color.a });
+		DrawCircle(int(pos.x), int(pos.y), radius, { color.r, color.g, color.b, color.a });
 	}
 
 	// Draw a color-filled triangle (vertex in counter-clockwise order!)
-	void RenderTriangle(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c, LeoColor color)
+	void RenderTriangle(const glm::vec2& a, const glm::vec2& b, const glm::vec2& c, Color color)
 	{
-		DrawTriangle({ a.x, a.y }, { b.x, b.y }, { c.x, c.y }, Color{ color.r, color.g, color.b, color.a });
+		DrawTriangle({ a.x, a.y }, { b.x, b.y }, { c.x, c.y }, { color.r, color.g, color.b, color.a });
 	}
 
 	// Input Handling Functions //

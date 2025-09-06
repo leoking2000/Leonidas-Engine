@@ -1,6 +1,6 @@
 #pragma once
 
-namespace LEO::UTL
+namespace LEO
 {
 	// Sets the seed for reproducible random number generation
 	void RandSetSeed(u32 seed);
