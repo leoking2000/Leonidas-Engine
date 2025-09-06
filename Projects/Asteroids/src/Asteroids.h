@@ -1,0 +1,25 @@
+#pragma once
+#include <vector>
+#include "components.h"
+
+class Game 
+{
+public:
+	Game();
+
+	Game(const Game&) = delete;
+	Game& operator=(const Game&) = delete;
+
+	~Game();
+public:
+	void UpdateGame();
+	void RenderGame();
+private:
+	void AddAsteroid(glm::vec2 pos);
+	void RemoveAsteroid(u32 index);
+private:
+	std::vector<Transform> m_asteroid_transform;
+	std::vector<Polygon> m_asteroid_polygons;
+};
+
+
