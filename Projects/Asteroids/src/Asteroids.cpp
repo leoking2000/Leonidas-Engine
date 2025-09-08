@@ -1,10 +1,26 @@
 #include "components.h"
 #include "Asteroids.h"
 
+#define PLAYER_SIZE 20.0f
+#define PLAYER_ACCEL 2.0f
+#define PLAYER_ROT_SPEED glm::radians(60.0f)
+#define PLAYER_MAX_SPEED 150.0f
+
 Game::Game()
 {
-	m_asteroid_transform.reserve(100);
-	m_asteroid_polygons.reserve(100);
+	m_transform_array.reserve(100);
+	m_polygons_array.reserve(100);
+
+	// Create the Player
+	m_transform_array.emplace_back();
+	m_transform_array.back().position = glm::vec2(LEO::WinWidth() / 2.0f, LEO::WinHeight() / 2.0f);
+	Polygon player_poly;
+	player_poly.vertexCount = 3;
+	player_poly.baseShape[0] = glm::vec2(0.0f, -PLAYER_SIZE * 2.0f);
+	player_poly.baseShape[1] = glm::vec2(PLAYER_SIZE, PLAYER_SIZE);
+	player_poly.baseShape[2] = glm::vec2(-PLAYER_SIZE, PLAYER_SIZE);
+	player_poly.approximateRadius = PLAYER_SIZE;
+	m_polygons_array.emplace_back(player_poly);
 }
 
 Game::~Game()
@@ -14,80 +30,77 @@ Game::~Game()
 
 void Game::UpdateGame()
 {
-	// movement
-	for (u32 i = 0; i < (u32)m_asteroid_transform.size(); i++)
+	// --- Input ---
+	m_input.inputs.x = LEO::KeyDown(LEO::KEY_W) || LEO::KeyDown(LEO::KEY_UP);    // forward
+	m_input.inputs.y = LEO::KeyDown(LEO::KEY_S) || LEO::KeyDown(LEO::KEY_DOWN);  // backward
+	m_input.inputs.z = LEO::KeyDown(LEO::KEY_D) || LEO::KeyDown(LEO::KEY_RIGHT); // right rotation
+	m_input.inputs.a = LEO::KeyDown(LEO::KEY_A) || LEO::KeyDown(LEO::KEY_LEFT);  // left rotation
+
+	// Player (index 0 assumed to be the player)
+	ApplyInput(m_input, m_transform_array[0], PLAYER_ACCEL, PLAYER_ROT_SPEED, PLAYER_MAX_SPEED);
+
+
+	// --- Movement ---
+	const float dt = LEO::DeltaTime();
+	const float winW = LEO::WinWidth();
+	const float winH = LEO::WinHeight();
+	u32 entityCount = (u32)m_transform_array.size();
+
+	for (u32 i = 0; i < entityCount; i++)
 	{
-		Transform& transfrom = m_asteroid_transform[i];
-		Polygon& polygon     = m_asteroid_polygons[i];
+		Transform& t = m_transform_array[i];
+		Polygon& p = m_polygons_array[i];
 
-		transfrom.position += transfrom.velocity      * LEO::DeltaTime();
-		transfrom.rotation += transfrom.rotationSpeed * LEO::DeltaTime();
+		UpdateTransform(t, dt);
+		BounceOffEdges(t, p, winW, winH);
+	}
 
-		// Bounce on X edges
-		if (transfrom.position.x - polygon.approximentRadius < 0) {
-			transfrom.position.x = polygon.approximentRadius;
-			transfrom.velocity.x *= -1;
-		}
-		if (transfrom.position.x + polygon.approximentRadius > LEO::WinWidth()) {
-			transfrom.position.x = LEO::WinWidth() - polygon.approximentRadius;
-			transfrom.velocity.x *= -1;
-		}
-
-		// Bounce on Y edges
-		if (transfrom.position.y - polygon.approximentRadius < 0) {
-			transfrom.position.y = polygon.approximentRadius;
-			transfrom.velocity.y *= -1;
-		}
-		if (transfrom.position.y + polygon.approximentRadius > LEO::WinHeight()) {
-			transfrom.position.y = LEO::WinHeight() - polygon.approximentRadius;
-			transfrom.velocity.y *= -1;
+	// --- Collisions ---
+	for (u32 i = 0; i < entityCount; i++) {
+		for (u32 j = i + 1; j < entityCount; j++) {
+			ResolveCollisionPolygons(m_transform_array[i], m_polygons_array[i],
+				m_transform_array[j], m_polygons_array[j]);
 		}
 	}
 
-	// Collisions
-	for (size_t i = 0; i < (u32)m_asteroid_transform.size(); i++) {
-		for (size_t j = i + 1; j < (u32)m_asteroid_transform.size(); j++) {
-			ResolveCollisionPolygons(m_asteroid_transform[i], m_asteroid_polygons[i], 
-				m_asteroid_transform[j], m_asteroid_polygons[j]);
-		}
-	}
-
-	if (LEO::MouseButtonPressed(LEO::MOUSE_BUTTON_LEFT))
-	{
+	// --- Spawning ---
+	if (LEO::MouseButtonPressed(LEO::MOUSE_BUTTON_LEFT)) {
 		AddAsteroid(LEO::MousePosition());
 	}
 }
 
 void Game::RenderGame()
 {
-	for (u32 i = 0; i < (u32)m_asteroid_transform.size(); i++)
+	for (u32 i = 0; i < (u32)m_transform_array.size(); i++)
 	{
-		Transform& transfrom = m_asteroid_transform[i];
-		Polygon& polygon = m_asteroid_polygons[i];
+		Transform transfrom = m_transform_array[i];
+		Polygon& polygon = m_polygons_array[i];
 
-		RenderPolygon(transfrom, polygon, LEO_DARKGRAY);
+		//transfrom.position += glm::vec2(LEO::WinWidth() / 2.0f, LEO::WinHeight() / 2.0f);
+
+		RenderPolygon(transfrom, polygon, i==0 ? LEO_DARKRED : LEO_DARKGRAY); // make the player(index 0), red
 	}
 }
 
 void Game::AddAsteroid(glm::vec2 pos)
 {
-	m_asteroid_transform.emplace_back(Transform{
+	m_transform_array.emplace_back(Transform{
 		pos, 0.0f, LEO::RandDir2D(LEO::RandFloat(150.0f, 250.0f)), 
 		(LEO::RandInt(0, 1) == 0 ? 1 : -1) * glm::radians(LEO::RandFloat(90.0f, 180.0f)) });
 
 	f32 size = LEO::RandFloat(40.0f, 60.0f);
-	m_asteroid_polygons.emplace_back(GenerateRendomPolygon(16, size, size + 30.0f));
+	m_polygons_array.emplace_back(GenerateRendomPolygon(16, size, size + 30.0f));
 }
 
 void Game::RemoveAsteroid(u32 index)
 {
-	LEOASSERT(index < (u32)m_asteroid_transform.size(), "index is invalid!!");
+	LEOASSERT(index < (u32)m_transform_array.size(), "index is invalid!!");
 
 	// move last element into position i
-	m_asteroid_transform[index] = m_asteroid_transform.back();
-	m_asteroid_polygons[index]  = m_asteroid_polygons.back();
+	m_transform_array[index] = m_transform_array.back();
+	m_polygons_array[index]  = m_polygons_array.back();
 
 	// remove the last element
-	m_asteroid_transform.pop_back();
-	m_asteroid_polygons.pop_back();
+	m_transform_array.pop_back();
+	m_polygons_array.pop_back();
 }

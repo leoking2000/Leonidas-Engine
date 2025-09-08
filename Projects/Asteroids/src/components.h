@@ -10,24 +10,41 @@ struct Transform
 	f32       rotationSpeed = 0.0f; // in radians
 };
 
+struct Input
+{
+	/// <summary>
+	/// x -> forward key down
+	/// y -> backward key down
+	/// z -> right rotation key down
+	/// a -> left rotation key down
+	/// </summary>
+	glm::bvec4 inputs;
+};
+
 #define MAX_VERTICES 16
 struct Polygon
 {
 	u32       vertexCount;
 	glm::vec2 baseShape[MAX_VERTICES];
-	f32       approximentRadius;
+	f32       approximateRadius;
 };
 
-struct Input
-{
-	/// <summary>
-	/// x -> up key down
-	/// y -> down key down
-	/// z -> right key down
-	/// a -> left key down
-	/// </summary>
-	glm::bvec4 inputs;
-};
+
+void UpdateTransform(Transform& t, f32 dt);
+
+void BounceOffEdges(Transform& t, const Polygon& poly, f32 winW, f32 winH);
+
+/// <summary>
+/// Applies input to the transform by setting its velocity and rotation speed.
+/// Up/Down keys move the player forward/backward based on its facing direction.
+/// Left/Right keys rotate the player by setting its rotation speed.
+/// </summary>
+/// <param name="input">Input state (x=up, y=down, z=right, a=left).</param>
+/// <param name="t">Transform to update (velocity and rotationSpeed are set).</param>
+/// <param name="speed">Movement speed of the player.</param>
+/// <param name="rotationSpeed">Angular speed applied when rotating left/right.</param>
+void ApplyInput(const Input& input, Transform& t, f32 speed, f32 rotationSpeed, f32 maxSpeed);
+
 
 /// <summary>
 /// Generates a random polygon with the specified number of vertices.
@@ -56,7 +73,7 @@ Polygon GenerateRendomPolygon(u32 vertex_count, f32 vertex_dist_min, f32 vertex_
 /// <param name="poly_b">Polygon data of the second polygon (approximated radius used).</param>
 /// <returns>True if the polygons (treated as circles) are colliding, false otherwise.</returns>
 bool CheckColitionPolygons(const Transform& t_a, const Polygon& poly_a,
-							  const Transform& t_b, const Polygon& poly_b);
+	const Transform& t_b, const Polygon& poly_b);
 
 // <summary>
 /// Resolves a collision between two polygons by approximating them as circles.
@@ -69,7 +86,7 @@ bool CheckColitionPolygons(const Transform& t_a, const Polygon& poly_a,
 /// <param name="t_b">Transform of the second polygon (position & velocity).</param>
 /// <param name="poly_b">Polygon data of the second polygon (approximated radius used).</param>
 void ResolveCollisionPolygons(Transform& t_a, const Polygon& poly_a,
-								Transform& t_b, const Polygon& poly_b);
+	Transform& t_b, const Polygon& poly_b);
 
 /// <summary>
 /// Renders a polygon by triangulating it into a fan of triangles.

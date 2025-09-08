@@ -2,6 +2,56 @@
 #include <array>
 #include "components.h"
 
+inline void WrapAngle(f32& angle)
+{
+	const float TWO_PI = glm::two_pi<f32>();
+	angle = fmod(angle, TWO_PI);
+	if (angle < 0.0f)
+		angle += TWO_PI;
+}
+
+void UpdateTransform(Transform& t, f32 dt)
+{
+	t.position += t.velocity * dt;
+	t.rotation += t.rotationSpeed * dt;
+	WrapAngle(t.rotation);
+}
+
+void BounceOffEdges(Transform& t, const Polygon& poly, f32 winW, f32 winH)
+{
+	f32 r = poly.approximateRadius;
+	if (t.position.x - r < 0) { t.position.x = r; t.velocity.x *= -1; }
+	if (t.position.x + r > winW) { t.position.x = winW - r; t.velocity.x *= -1; }
+	if (t.position.y - r < 0) { t.position.y = r; t.velocity.y *= -1; }
+	if (t.position.y + r > winH) { t.position.y = winH - r; t.velocity.y *= -1; }
+}
+
+void ApplyInput(const Input& input, Transform& t, f32 speed, f32 rotationSpeed, f32 maxSpeed)
+{
+	glm::vec2 dir(0.0f);
+
+	// Movement (forward/backward relative to current rotation)
+	if (input.inputs.x) dir.y += 1.0f; // forward
+	if (input.inputs.y) dir.y -= 1.0f; // backward
+
+	if (dir != glm::vec2(0.0f))
+	{
+		// Forward vector: 0 rotation = up, Y+ = down
+		glm::vec2 forward(-sin(t.rotation), -cos(t.rotation));
+		t.velocity += forward * dir.y * speed;
+
+		if (glm::length2(t.velocity) > maxSpeed * maxSpeed)
+		{
+			t.velocity = glm::normalize(t.velocity) * maxSpeed;
+		}	
+	}
+
+	// Rotation
+	t.rotationSpeed = 0.0f;
+	if (input.inputs.z) t.rotationSpeed -= rotationSpeed;  // rotate right
+	if (input.inputs.a) t.rotationSpeed += rotationSpeed;  // rotate left
+}
+
 
 Polygon GenerateRendomPolygon(u32 vertex_count, f32 vertex_dist_min, f32 vertex_dist_max)
 {
@@ -34,7 +84,7 @@ Polygon GenerateRendomPolygon(u32 vertex_count, f32 vertex_dist_min, f32 vertex_
 		radius_sum += dist;
 	}
 
-	poly.approximentRadius = radius_sum / vertex_count;
+	poly.approximateRadius = radius_sum / vertex_count;
 
 	return poly;
 }
@@ -44,7 +94,7 @@ bool CheckColitionPolygons(const Transform& t_a, const Polygon& poly_a,
 {
 	// Treat polygons as circles with given radius
 	float dist2 = glm::length2(t_a.position - t_b.position);
-	float radiusSum = poly_a.approximentRadius + poly_b.approximentRadius;
+	float radiusSum = poly_a.approximateRadius + poly_b.approximateRadius;
 	return dist2 <= (radiusSum * radiusSum);
 }
 
@@ -60,12 +110,12 @@ void ResolveCollisionPolygons(Transform& t_a, const Polygon& poly_a,
 
 
 	glm::vec2 normal = diff / dist;
-	float penetration = (poly_a.approximentRadius + poly_b.approximentRadius) - dist;
+	float penetration = (poly_a.approximateRadius + poly_b.approximateRadius) - dist;
 
 
 	// Mass proportional to radius
-	float massA = poly_a.approximentRadius;
-	float massB = poly_b.approximentRadius;
+	float massA = poly_a.approximateRadius;
+	float massB = poly_b.approximateRadius;
 	float totalMass = massA + massB;
 
 
