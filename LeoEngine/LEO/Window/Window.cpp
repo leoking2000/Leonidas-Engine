@@ -43,6 +43,10 @@ namespace LEO
 		rlImGuiSetup(true);
 
 		SetExitKey(KEY_NULL);
+		if (win_params.win_init_flags & WIN_FLAG_ESC_CLOSE)
+		{
+			SetExitKey(KEY_ESCAPE);
+		}
 
 		LEOLOGINFO("Window created with size: {} x {}", win_params.win_width, win_params.win_height);
 	}

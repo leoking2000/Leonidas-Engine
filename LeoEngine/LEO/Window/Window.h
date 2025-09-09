@@ -5,10 +5,11 @@ namespace LEO
 {
 	typedef enum 
 	{
-		WIN_FLAG_DEFAULT    = 0x00000000,
-		WIN_FLAG_RESIZABLE  = 0x00000002,
-		WIN_FLAG_VSYNC      = 0x00000004,
-		WIN_FLAG_FULLSCREEN = 0x00000008,
+		WIN_FLAG_DEFAULT    =        0,
+		WIN_FLAG_RESIZABLE  = (1 << 0),
+		WIN_FLAG_VSYNC      = (1 << 1),
+		WIN_FLAG_FULLSCREEN = (1 << 2),
+		WIN_FLAG_ESC_CLOSE  = (1 << 3),
 	} ConfigFlags;
 
 	struct WindowsParameters

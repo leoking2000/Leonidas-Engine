@@ -1,103 +1,150 @@
 #include <LEO/LeoEngine.h>
-#include <imgui/imgui.h>
+#include <Imgui/imgui.h>
 
-struct GameState
+// Components
+struct Sphere
 {
-	glm::vec2 player_pos;
-	f32       player_radius;
-	bool      game_over = false;
+	glm::vec2 pos;
+	f32 radius;
+	glm::vec2 vel;
+	i32 hp;
 };
 
-void GameInit(GameState& s)
+static LEO::entity_id next_id = 0;
+static LEO::ComponentStore<Sphere> sphere_store;
+
+
+void CreateRandomSphere()
 {
-	s.player_pos = glm::vec2(LEO::WinWidth() / 2.0f, LEO::WinHeight() / 2.0f);
-	s.player_radius = LEO::WinWidth() * 0.01f;
+	sphere_store.AddComponentTo(next_id, Sphere{ LEO::RandFloat2(0.0f, 900.0f), 15.0f, LEO::RandDir2D(150.0f), 
+		LEO::RandInt(1, 10)});
+	next_id++;
 }
 
-void GameUpdate(GameState& s)
+void Init()
 {
-#if 1
-	ImGui::Begin("Game Debug");
-
-	ImGui::Text("FPS: %i", LEO::CurrentFPS());
-
-	ImGui::DragFloat2("Player Pos:", glm::value_ptr(s.player_pos));
-	ImGui::DragFloat("Player Radius:", &s.player_radius);
-
-	if (ImGui::Button("Rand"))
+	for (i32 i = 0; i < 500; i++)
 	{
-		s.player_pos = LEO::RandFloat2(100.0f, 900.0f);
-		s.player_radius = LEO::RandFloat(20.0f, 100.0f);
+		CreateRandomSphere();
 	}
+}
 
-	ImGui::End();
-#endif
-
-	if (LEO::KeyDown(LEO::KEY_ESCAPE))
-	{
-		s.game_over = true;
-	}
-
-	if (LEO::KeyDown(LEO::KEY_W))
-	{
-		s.player_pos.y -= s.player_radius * 0.1f;
-	}
-	if (LEO::KeyDown(LEO::KEY_S))
-	{
-		s.player_pos.y += s.player_radius * 0.1f;
-	}
-
-	if (LEO::KeyDown(LEO::KEY_D))
-	{
-		s.player_pos.x += s.player_radius * 0.1f;
-	}
-	if (LEO::KeyDown(LEO::KEY_A))
-	{
-		s.player_pos.x -= s.player_radius * 0.1f;
-	}
-
+void SpawnSystem()
+{
 	if (LEO::MouseButtonPressed(LEO::MOUSE_BUTTON_RIGHT))
 	{
-		s.player_pos = LEO::MousePosition();
+		CreateRandomSphere();
 	}
 }
 
-void GameDraw(GameState& s)
+void RenderStats()
 {
-	LEO::RenderCircle(s.player_pos, s.player_radius, LEO_DARKGRAY);
-	LEO::RenderTriangle({ 100.0f, 100.0f }, { 100.0f, 200.0f }, { 200.0f, 200.0f }, LEO_FORESTGREEN);
+	// Compute statistics
+	u32 count = 0;
+
+	for (auto& [id, s] : sphere_store)
+	{
+		count++;
+	}
+
+	// ImGui window
+	ImGui::Begin("Stress Test");
+	ImGui::Text("FPS: %u", LEO::CurrentFPS());
+	ImGui::Text("Sphere count: %u", count);
+	ImGui::Text("Sphere next id: %u", next_id);
+	ImGui::End();
 }
 
 
-int main(void)
+void MoveSystem()
+{
+	for (auto& [e, sphere] : sphere_store)
+	{
+		sphere.pos += sphere.vel * LEO::DeltaTime();
+
+		const f32 r = sphere.radius;
+		const f32 winW = (f32)LEO::WinWidth();
+		const f32 winH = (f32)LEO::WinHeight();
+		if (sphere.pos.x - r < 0)    { sphere.pos.x = r;         sphere.vel.x *= -1; }
+		if (sphere.pos.x + r > winW) { sphere.pos.x = winW - r;  sphere.vel.x *= -1; }
+		if (sphere.pos.y - r < 0)    { sphere.pos.y = r;         sphere.vel.y *= -1; }
+		if (sphere.pos.y + r > winH) { sphere.pos.y = winH - r;  sphere.vel.y *= -1; }
+
+		if (sphere.hp <= 0) {
+			sphere_store.RemoveComponentFrom(e);
+			//CreateRandomSphere();
+		}
+	}
+}
+
+void CollisionSystem()
+{
+	for (auto itA = sphere_store.begin(); itA != sphere_store.end(); ++itA)
+	{
+		Sphere& a = itA->second;
+		for (auto itB = std::next(itA); itB != sphere_store.end(); ++itB)
+		{
+			Sphere& b = itB->second;
+
+			glm::vec2 delta = b.pos - a.pos;
+			float dist2 = glm::dot(delta, delta);
+			float r = a.radius + b.radius;
+
+			if (dist2 < r * r) // collision!
+			{
+				float dist = std::sqrt(dist2);
+				if (dist == 0.0f) dist = 0.01f; // avoid divide by zero
+
+				glm::vec2 normal = delta / dist;
+
+				// Push spheres apart by half the overlap each
+				float overlap = 0.5f * (r - dist);
+				a.pos -= normal * overlap;
+				b.pos += normal * overlap;
+
+				// Reflect velocities along the collision normal
+				a.vel = glm::reflect(a.vel, normal);
+				b.vel = glm::reflect(b.vel, -normal);
+
+				a.hp -= 1;
+				b.hp -= 1;
+
+
+			}
+		}
+	}
+}
+
+void RenderSystem()
+{
+	for (auto& [e, sphere] : sphere_store)
+	{
+		LEO::RenderCircle(sphere.pos, sphere.radius, LEO_DARKGREEN);
+	}
+}
+
+
+int main(int argc, char** argv)
 {
 	LEO::GetDefaultLogChannel().SetLoggingLevel(LEO::LogLevel::DEBUG);
 
-	LEO::CreateWindow(1600, 900, "Leonidas Engine", LEO::WIN_FLAG_RESIZABLE);
+	LEO::CreateWindow(1600, 900, "Leonidas Engine", LEO::WIN_FLAG_ESC_CLOSE);
 	LEO::SetClearColor(LEO_BLACK);
 	LEO::SetFPSTarget(60);
+	
+	Init();
 
-#if 1
-	i32 year = -2025;
-	year = glm::abs(year);
-	LEO::Timer timer;
-	LEOLOGVERBOSE("The year is {}", year);
-	LEOLOGDEBUG("Leonidas Engine {}!!!", year);
-	LEOLOGDEBUG("Log time: {}ms", timer.ElapsedMillis());
-
-	LEOCHECKF(year == 2025, "wrong year!!!").LEOWATCH(year);
-	LEOASSERT(year == 2025, "wrong year!!!").LEOWATCH(year);
-#endif
-
-	GameState s;
-	GameInit(s);
-
-	while (!LEO::ShouldCloseWindow() && !s.game_over)
+	while (!LEO::ShouldCloseWindow())
 	{
 		LEO::StartFrame();
-		
-		GameUpdate(s);
-		GameDraw(s);
+
+		SpawnSystem();
+		MoveSystem();
+		CollisionSystem();
+		RenderSystem();
+		RenderStats();
+
+		sphere_store.Update();
 
 		LEO::EndFrame();
 	}

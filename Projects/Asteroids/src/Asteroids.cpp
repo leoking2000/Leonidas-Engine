@@ -41,9 +41,9 @@ void Game::UpdateGame()
 
 
 	// --- Movement ---
-	const float dt = LEO::DeltaTime();
-	const float winW = LEO::WinWidth();
-	const float winH = LEO::WinHeight();
+	const f32 dt = LEO::DeltaTime();
+	const f32 winW = (f32)LEO::WinWidth();
+	const f32 winH = (f32)LEO::WinHeight();
 	u32 entityCount = (u32)m_transform_array.size();
 
 	for (u32 i = 0; i < entityCount; i++)

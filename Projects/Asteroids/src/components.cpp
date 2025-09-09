@@ -74,7 +74,7 @@ Polygon GenerateRendomPolygon(u32 vertex_count, f32 vertex_dist_min, f32 vertex_
 
 	f32 radius_sum = 0.0f;
 	
-	for (i32 i = 0; i < poly.vertexCount; i++) 
+	for (u32 i = 0; i < poly.vertexCount; i++) 
 	{
 		f32 angle = glm::radians(step * i);
 		f32 dist  = LEO::RandFloat(vertex_dist_min, vertex_dist_max);
