@@ -11,54 +11,60 @@ struct Sphere
 };
 
 static LEO::entity_id next_id = 0;
-static LEO::ComponentStore<Sphere> sphere_store;
+static LEO::ComponentArray<Sphere, 1000> sphere_store;
+static std::vector<LEO::entity_id> m_free_ids;
 
-
-void CreateRandomSphere()
+static void CreateEntity(const Sphere& sphere)
 {
-	sphere_store.AddComponentTo(next_id, Sphere{ LEO::RandFloat2(0.0f, 900.0f), 15.0f, LEO::RandDir2D(150.0f), 
-		LEO::RandInt(1, 10)});
-	next_id++;
+	if (m_free_ids.empty())
+	{
+		sphere_store.AddComponent(next_id, sphere);
+		next_id++;
+	}
+	else
+	{
+		sphere_store.AddComponent(m_free_ids.back(), sphere);
+		m_free_ids.pop_back();
+	}
+	sphere_store.ApplyPending();
 }
 
-void Init()
+static void DestroyEntity(LEO::entity_id id)
 {
-	for (i32 i = 0; i < 500; i++)
+	sphere_store.RemoveComponent(id);
+	m_free_ids.emplace_back(id);
+	sphere_store.ApplyPending();
+}
+
+
+static void Init()
+{
+	for (i32 i = 0; i < 1000; i++)
 	{
-		CreateRandomSphere();
+		CreateEntity(Sphere{ {LEO::RandFloat(0.0f, 1600.0f), LEO::RandFloat(0.0f, 900.0f)}, 
+			20.0f, LEO::RandDir2D(150.0f), LEO::RandInt(20, 40) });
 	}
 }
 
-void SpawnSystem()
+static void SpawnSystem()
 {
-	if (LEO::MouseButtonPressed(LEO::MOUSE_BUTTON_RIGHT))
+	for (auto [e, sphere] : sphere_store)
 	{
-		CreateRandomSphere();
-	}
-}
+		if (sphere.hp <= 0) {
+			DestroyEntity(e);
 
-void RenderStats()
-{
-	// Compute statistics
-	u32 count = 0;
+			if (sphere.radius <= 3.0f) continue;
 
-	for (auto& [id, s] : sphere_store)
-	{
-		count++;
+			CreateEntity(Sphere{ sphere.pos, sphere.radius / 2.0f, LEO::RandDir2D(150.0f), LEO::RandInt(1, 5) });
+		}
 	}
 
-	// ImGui window
-	ImGui::Begin("Stress Test");
-	ImGui::Text("FPS: %u", LEO::CurrentFPS());
-	ImGui::Text("Sphere count: %u", count);
-	ImGui::Text("Sphere next id: %u", next_id);
-	ImGui::End();
 }
 
 
-void MoveSystem()
+static void MoveSystem()
 {
-	for (auto& [e, sphere] : sphere_store)
+	for (auto [e, sphere] : sphere_store)
 	{
 		sphere.pos += sphere.vel * LEO::DeltaTime();
 
@@ -69,22 +75,17 @@ void MoveSystem()
 		if (sphere.pos.x + r > winW) { sphere.pos.x = winW - r;  sphere.vel.x *= -1; }
 		if (sphere.pos.y - r < 0)    { sphere.pos.y = r;         sphere.vel.y *= -1; }
 		if (sphere.pos.y + r > winH) { sphere.pos.y = winH - r;  sphere.vel.y *= -1; }
-
-		if (sphere.hp <= 0) {
-			sphere_store.RemoveComponentFrom(e);
-			//CreateRandomSphere();
-		}
 	}
 }
 
-void CollisionSystem()
+static void CollisionSystem()
 {
 	for (auto itA = sphere_store.begin(); itA != sphere_store.end(); ++itA)
 	{
-		Sphere& a = itA->second;
-		for (auto itB = std::next(itA); itB != sphere_store.end(); ++itB)
+		Sphere& a = (*itA).comp;
+		for (auto itB = itA.next(); itB != sphere_store.end(); ++itB)
 		{
-			Sphere& b = itB->second;
+			Sphere& b = (*itB).comp;
 
 			glm::vec2 delta = b.pos - a.pos;
 			float dist2 = glm::dot(delta, delta);
@@ -108,19 +109,29 @@ void CollisionSystem()
 
 				a.hp -= 1;
 				b.hp -= 1;
-
-
 			}
 		}
 	}
 }
 
-void RenderSystem()
+static void RenderSystem()
 {
-	for (auto& [e, sphere] : sphere_store)
+	u32 count = 0;
+	for (auto [e, sphere] : sphere_store)
 	{
-		LEO::RenderCircle(sphere.pos, sphere.radius, LEO_DARKGREEN);
+		LEO::Color color = sphere.radius <= 10.0f ? LEO_DARKGREEN : LEO_BLEU;
+		color = sphere.radius <= 5.0f ? LEO_RED : color;
+
+		LEO::RenderCircle(sphere.pos, sphere.radius, color);
+		count++;
 	}
+
+	// ImGui window
+	ImGui::Begin("Stress Test");
+	ImGui::Text("FPS: %u", LEO::CurrentFPS());
+	ImGui::Text("Sphere count: %u", count);
+	ImGui::Text("Sphere next id: %u", next_id);
+	ImGui::End();
 }
 
 
@@ -130,7 +141,7 @@ int main(int argc, char** argv)
 
 	LEO::CreateWindow(1600, 900, "Leonidas Engine", LEO::WIN_FLAG_ESC_CLOSE);
 	LEO::SetClearColor(LEO_BLACK);
-	LEO::SetFPSTarget(60);
+	LEO::SetFPSTarget(60u);
 	
 	Init();
 
@@ -142,9 +153,6 @@ int main(int argc, char** argv)
 		MoveSystem();
 		CollisionSystem();
 		RenderSystem();
-		RenderStats();
-
-		sphere_store.Update();
 
 		LEO::EndFrame();
 	}

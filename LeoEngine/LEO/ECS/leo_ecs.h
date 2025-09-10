@@ -1,183 +1,126 @@
 #pragma once
-#include <unordered_map>
+#include <array>
+#include <bitset>
 #include <vector>
+#include <ranges>
+
+#include "LEO/Log/Log.h"
 
 namespace LEO
 {
-    typedef u32 entity_id;
+	using entity_id = u64;
 
-    /**
-     * ComponentStore<T>
-     * -----------------
-     * Manages components of type T, keyed by entity_id.
-     */
-    template<typename T>
-    class ComponentStore
-    {
-    public:
-        // Marks the component for addition. Actual addition happens when `Update()` is called.
-        void AddComponentTo(entity_id id, T component)
-        {
-            m_toAdd.emplace_back(id, component);
-        }
+	template<typename T, u64 SIZE>
+	class ComponentArray
+	{
+	public:
+		void AddComponent(entity_id id, T component) 
+		{ 
+			LEOASSERTF(id < m_data.size(), "Invalid ID: {}, size of ComponentArray is {}", id, m_data.size());
+			LEOASSERTF(!m_exist[id], "Entity with ID: {} already has the component", id);
 
-        /// Marks the component for removal. Actual deletion happens when `Update()` is called.
-        void RemoveComponentFrom(entity_id id)
-        {
-            m_toRemove.emplace_back(id);
-        }
+			m_toAdd.emplace_back(id, std::move(component)); 
+		}
 
-        /// Does the entity have this component?
-        bool HasComponent(entity_id id) const
-        {
-            return m_mapping.find(id) != m_mapping.end();
-        }
+		void RemoveComponent(entity_id id)           
+		{ 
+			LEOASSERTF(id < m_data.size(), "Invalid ID: {}, size of ComponentArray is {}", id, m_data.size());
+			LEOASSERTF(m_exist[id], "Entity with ID: {} does not have the component", id);
 
-        /// Get a pointer to the component, or nullptr if not found.
-        T* GetComponent(entity_id id)
-        {
-            auto it = m_mapping.find(id);
-            return (it != m_mapping.end()) ? &it->second : nullptr;
-        }
+			m_toRemove.emplace_back(id); 
+		}
+		
+		bool HasComponent(entity_id id) const        
+		{ 
+			LEOASSERTF(id < m_data.size(), "Invalid ID: {}, size of ComponentArray is {}", id, m_data.size());
+			return m_exist[id]; 
+		}
 
-        const T* GetComponent(entity_id id) const
-        {
-            auto it = m_mapping.find(id);
-            return (it != m_mapping.end()) ? &it->second : nullptr;
-        }
+		T*   GetComponent(entity_id id)              
+		{ 
+			LEOASSERTF(id < m_data.size(), "Invalid ID: {}, size of ComponentArray is {}", id, m_data.size());
+			return m_exist[id] ? &m_data[id] : nullptr; 
+		}
 
-        // Flush queued additions and removals
-        void Update()
-        {
-            for (entity_id id : m_toRemove)
-            {
-                m_mapping.erase(id);
-            }
-            m_toRemove.clear();
+		u64 NumOfComponents() const { return m_count; }
+	public:
+		void ApplyPending() {
+			// Remove pending components
+			for (entity_id id : m_toRemove) {
+				if (m_exist[id]) {
+					m_exist[id] = false;
+					std::destroy_at(&m_data[id]);
+					m_count--;
+				}
+			}
+			m_toRemove.clear();
 
-            for (auto& [id, comp] : m_toAdd)
-            {
-                m_mapping[id] = std::move(comp);
-            }
-            m_toAdd.clear();
-        }
-    public:
-        /// Iteration support (range-based for loops).
-        auto begin() { return m_mapping.begin(); }
-        auto end() { return m_mapping.end(); }
-        auto begin() const { return m_mapping.begin(); }
-        auto end()   const { return m_mapping.end(); }
-    public:
-        u64 EstimatedMemoryUsage() const
-        {
-            u64 memory = 0;
+			// Add pending components
+			for (auto& [id, comp] : m_toAdd) {
+				if (!m_exist[id]) {
+					m_exist[id] = true;
+					m_count++;
+					
+				}
+				else {
+					std::destroy_at(&m_data[id]);
+				}
+				m_data[id] = std::move(comp);
+			}
+			m_toAdd.clear();
+		}
+	public:
+		struct Iterator {
+			u64 index;
+			ComponentArray* parent;
 
-            // unordered_map
-            memory += sizeof(m_mapping);
-            memory += m_mapping.size() * (sizeof(entity_id) + sizeof(T) + sizeof(void*) * 2);
+			bool operator!=(const Iterator& other) const { return index != other.index; }
 
-            // deferred additions
-            memory += sizeof(m_toAdd) + m_toAdd.capacity() * sizeof(std::pair<entity_id, T>);
+			// Prefix ++ : increment and return reference
+			Iterator& operator++() {
+				do { ++index; } while (index < SIZE && !parent->m_exist[index]);
+				return *this;
+			}
 
-            // deferred removals
-            memory += sizeof(m_toRemove) + m_toRemove.capacity() * sizeof(entity_id);
+			// Postfix ++ : return copy before increment
+			Iterator operator++(int) {
+				Iterator temp = *this;
+				++(*this); // use prefix
+				return temp;
+			}
 
-            return memory;
-        }
-    private:
-        std::unordered_map<entity_id, T> m_mapping;
-        std::vector<std::pair<entity_id, T>> m_toAdd;
-        std::vector<entity_id> m_toRemove;
-    };
+			struct Item {
+				entity_id id;
+				T& comp;
+			};
+			Item operator*() const {
+				return { index, parent->m_data[index] };
+			}
 
-#if 0
-    // Abstract System
-    class System {
-    public:
-        virtual ~System() = default;
-        virtual void Update(float dt) = 0;
-    };
+			// next helper: advance by n steps
+			Iterator next(size_t n = 1) const {
+				Iterator it = *this;
+				for (size_t i = 0; i < n; ++i) ++it;
+				return it;
+			}
+		};
 
-    class Entity; // forward declaration
+		Iterator begin() {
+			u64 start = 0;
+			while (start < SIZE && !m_exist[start]) ++start;
+			return Iterator{ start, this };
+		}
 
-    class EntityManager
-    {
-    public:
-        Entity CreateEntity();
+		Iterator end() { return Iterator{ SIZE, this }; }
+	private:
+		std::array<T, SIZE> m_data = {};
+		std::bitset<SIZE> m_exist  = {};
 
-        void DestroyEntity(entity_id id)
-        {
-            if (m_aliveEntities.erase(id)) {
-                // TODO: call RemoveEntity(id) on all component stores if needed
-                m_freeIds.push(id);
-            }
-        }
+		std::vector<std::pair<entity_id, T>> m_toAdd;
+		std::vector<entity_id> m_toRemove;
 
-        template<typename T>
-        ComponentStore<T>& GetComponentStore() {
-            auto type = std::type_index(typeid(T));
-            if (m_componentStores.find(type) == m_componentStores.end()) {
-                m_componentStores[type] = std::make_shared<ComponentStore<T>>();
-            }
-            return *std::static_pointer_cast<ComponentStore<T>>(m_componentStores[type]);
-        }
+		u64 m_count = 0;
+	};
 
-        void AddSystem(std::unique_ptr<System> system)
-        {
-            m_systems.emplace_back(std::move(system));
-        }
-
-        void Update(float dt)
-        {
-            for (auto& sys : m_systems)
-            {
-                sys->Update(dt);
-            }
-        }
-
-        bool IsAlive(entity_id id) const {
-            return m_aliveEntities.find(id) != m_aliveEntities.end();
-        }
-
-    private:
-        entity_id m_nextEntityId = 0;
-        std::queue<entity_id> m_freeIds;
-        std::unordered_set<entity_id> m_aliveEntities;
-
-        std::unordered_map<std::type_index, std::shared_ptr<void>> m_componentStores;
-        std::vector<std::unique_ptr<System>> m_systems;
-    };
-
-
-    // Entity handle
-    class Entity
-    {
-    public:
-        template<typename T>
-        void AddComponent(const T& c) { manager->GetComponentStore<T>().AddComponentTo(id, c); }
-
-        template<typename T>
-        void RemoveComponent() { manager->GetComponentStore<T>().RemoveComponentFrom(id); }
-
-        template<typename T>
-        bool HasComponent() const { return manager->GetComponentStore<T>().HasComponent(id); }
-
-        template<typename T>
-        T& GetComponent() { return manager->GetComponentStore<T>().GetComponent(id); }
-
-        template<typename T>
-        const T& GetComponent() const { return manager->GetComponentStore<T>().GetComponent(id); }
-
-        entity_id GetId() const { return id; }
-        bool IsAlive() const { return manager->IsAlive(id); }
-
-    private:
-        friend class EntityManager; // only EntityManager can construct
-
-        Entity(entity_id id_, EntityManager* m) : id(id_), manager(m) {}
-
-        entity_id id;
-        EntityManager* manager;
-    };
-#endif 
 }
+
