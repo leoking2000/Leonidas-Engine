@@ -11,7 +11,7 @@ struct Sphere
 };
 
 static LEO::entity_id next_id = 0;
-static LEO::ComponentArray<Sphere, 1000> sphere_store;
+static LEO::ComponentArray<Sphere, 100> sphere_store;
 static std::vector<LEO::entity_id> m_free_ids;
 
 static void CreateEntity(const Sphere& sphere)
@@ -39,7 +39,7 @@ static void DestroyEntity(LEO::entity_id id)
 
 static void Init()
 {
-	for (i32 i = 0; i < 1000; i++)
+	for (i32 i = 0; i < 100; i++)
 	{
 		CreateEntity(Sphere{ {LEO::RandFloat(0.0f, 1600.0f), LEO::RandFloat(0.0f, 900.0f)}, 
 			20.0f, LEO::RandDir2D(150.0f), LEO::RandInt(20, 40) });
