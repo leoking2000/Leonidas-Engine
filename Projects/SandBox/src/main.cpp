@@ -10,8 +10,10 @@ struct Sphere
 	i32 hp;
 };
 
+#define MAX_ENTITIES 200
+
 static LEO::entity_id next_id = 0;
-static LEO::ComponentArray<Sphere, 100> sphere_store;
+static LEO::ComponentArray<Sphere, MAX_ENTITIES> sphere_store;
 static std::vector<LEO::entity_id> m_free_ids;
 
 static void CreateEntity(const Sphere& sphere)
@@ -26,20 +28,18 @@ static void CreateEntity(const Sphere& sphere)
 		sphere_store.AddComponent(m_free_ids.back(), sphere);
 		m_free_ids.pop_back();
 	}
-	sphere_store.ApplyPending();
 }
 
 static void DestroyEntity(LEO::entity_id id)
 {
 	sphere_store.RemoveComponent(id);
 	m_free_ids.emplace_back(id);
-	sphere_store.ApplyPending();
 }
 
 
 static void Init()
 {
-	for (i32 i = 0; i < 100; i++)
+	for (i32 i = 0; i < MAX_ENTITIES / 2; i++)
 	{
 		CreateEntity(Sphere{ {LEO::RandFloat(0.0f, 1600.0f), LEO::RandFloat(0.0f, 900.0f)}, 
 			20.0f, LEO::RandDir2D(150.0f), LEO::RandInt(20, 40) });
@@ -48,23 +48,24 @@ static void Init()
 
 static void SpawnSystem()
 {
-	for (auto [e, sphere] : sphere_store)
+	for (auto [i, sphere] : sphere_store)
 	{
 		if (sphere.hp <= 0) {
-			DestroyEntity(e);
+			DestroyEntity(i);
 
-			if (sphere.radius <= 3.0f) continue;
+			if (sphere.radius <= 5.0f) continue;
 
-			CreateEntity(Sphere{ sphere.pos, sphere.radius / 2.0f, LEO::RandDir2D(150.0f), LEO::RandInt(1, 5) });
+			const f32 r = sphere.radius / 2.0f;
+			CreateEntity(Sphere{ sphere.pos, r, LEO::RandDir2D(150.0f), 5 });
+			CreateEntity(Sphere{ sphere.pos, r, LEO::RandDir2D(150.0f), 5 });
 		}
 	}
 
 }
 
-
 static void MoveSystem()
 {
-	for (auto [e, sphere] : sphere_store)
+	for (auto [i, sphere] : sphere_store) 
 	{
 		sphere.pos += sphere.vel * LEO::DeltaTime();
 
@@ -81,32 +82,27 @@ static void MoveSystem()
 static void CollisionSystem()
 {
 	for (auto itA = sphere_store.begin(); itA != sphere_store.end(); ++itA)
-	{
-		Sphere& a = (*itA).comp;
+	{		
 		for (auto itB = itA.next(); itB != sphere_store.end(); ++itB)
 		{
+			Sphere& a = (*itA).comp;
 			Sphere& b = (*itB).comp;
 
 			glm::vec2 delta = b.pos - a.pos;
 			float dist2 = glm::dot(delta, delta);
 			float r = a.radius + b.radius;
-
 			if (dist2 < r * r) // collision!
 			{
 				float dist = std::sqrt(dist2);
 				if (dist == 0.0f) dist = 0.01f; // avoid divide by zero
-
 				glm::vec2 normal = delta / dist;
-
 				// Push spheres apart by half the overlap each
 				float overlap = 0.5f * (r - dist);
 				a.pos -= normal * overlap;
 				b.pos += normal * overlap;
-
 				// Reflect velocities along the collision normal
 				a.vel = glm::reflect(a.vel, normal);
 				b.vel = glm::reflect(b.vel, -normal);
-
 				a.hp -= 1;
 				b.hp -= 1;
 			}
@@ -117,13 +113,14 @@ static void CollisionSystem()
 static void RenderSystem()
 {
 	u32 count = 0;
-	for (auto [e, sphere] : sphere_store)
+	for(auto [i, sphere] : sphere_store) 
 	{
 		LEO::Color color = sphere.radius <= 10.0f ? LEO_DARKGREEN : LEO_BLEU;
 		color = sphere.radius <= 5.0f ? LEO_RED : color;
 
 		LEO::RenderCircle(sphere.pos, sphere.radius, color);
-		count++;
+
+		count += 1;
 	}
 
 	// ImGui window
@@ -144,6 +141,7 @@ int main(int argc, char** argv)
 	LEO::SetFPSTarget(60u);
 	
 	Init();
+	sphere_store.ApplyPending();
 
 	while (!LEO::ShouldCloseWindow())
 	{
@@ -153,6 +151,8 @@ int main(int argc, char** argv)
 		MoveSystem();
 		CollisionSystem();
 		RenderSystem();
+
+		sphere_store.ApplyPending();
 
 		LEO::EndFrame();
 	}
