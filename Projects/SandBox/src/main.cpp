@@ -13,8 +13,11 @@ struct Sphere
 #define MAX_ENTITIES 200
 
 static LEO::entity_id next_id = 0;
-static LEO::ComponentArray<Sphere, MAX_ENTITIES> sphere_store;
 static std::vector<LEO::entity_id> m_free_ids;
+
+static LEO::ComponentArray<Sphere, MAX_ENTITIES> sphere_store;
+//static LEO::SparseComponentStore<Sphere> sphere_store;
+
 
 static void CreateEntity(const Sphere& sphere)
 {
@@ -82,15 +85,16 @@ static void MoveSystem()
 static void CollisionSystem()
 {
 	for (auto itA = sphere_store.begin(); itA != sphere_store.end(); ++itA)
-	{		
+	{
+		Sphere& a = (*itA).comp;
 		for (auto itB = itA.next(); itB != sphere_store.end(); ++itB)
 		{
-			Sphere& a = (*itA).comp;
 			Sphere& b = (*itB).comp;
 
 			glm::vec2 delta = b.pos - a.pos;
 			float dist2 = glm::dot(delta, delta);
 			float r = a.radius + b.radius;
+
 			if (dist2 < r * r) // collision!
 			{
 				float dist = std::sqrt(dist2);
@@ -109,6 +113,7 @@ static void CollisionSystem()
 		}
 	}
 }
+
 
 static void RenderSystem()
 {
@@ -138,7 +143,8 @@ int main(int argc, char** argv)
 
 	LEO::CreateWindow(1600, 900, "Leonidas Engine", LEO::WIN_FLAG_ESC_CLOSE);
 	LEO::SetClearColor(LEO_BLACK);
-	LEO::SetFPSTarget(60u);
+
+	LEO::RandSetSeed(1234);
 	
 	Init();
 	sphere_store.ApplyPending();
