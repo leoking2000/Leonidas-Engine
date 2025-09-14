@@ -125,13 +125,16 @@ static void RenderSystem()
 
 		LEO::RenderCircle(sphere.pos, sphere.radius, color);
 
+		LEOLOGVERBOSE("id {}", i);
+
 		count += 1;
 	}
 
 	// ImGui window
 	ImGui::Begin("Stress Test");
 	ImGui::Text("FPS: %u", LEO::CurrentFPS());
-	ImGui::Text("Sphere count: %u", count);
+	ImGui::Text("Sphere count we saw: %u", count);
+	ImGui::Text("Sphere count exits: %u", sphere_store.NumOfComponents());
 	ImGui::Text("Sphere next id: %u", next_id);
 	ImGui::End();
 }

@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <limits>
 
+#include <memory>
+#include <typeindex>
+
 #include "LEO/Log/Log.h"
 
 namespace LEO
@@ -16,25 +19,30 @@ namespace LEO
 	using leo_size_t = u16;
 	using entity_id  = leo_size_t;
 
+	class IComponentStoreBase 
+	{
+	public:
+		virtual void       RemoveComponent(entity_id id)         = 0; // Marks the (Entity id, component) mapping for removal if it exist
+		virtual bool       HasComponent(entity_id id) const      = 0; // Returns true if Entity id is mapped to the component, otherwise false
+		virtual leo_size_t NumOfComponents() const               = 0; // Returns the number of Entity id mapped to a component
+		virtual leo_size_t MaxCapacity() const                   = 0; // The Maximum capacity, how many (Entity id, component) mapping can we store
+		virtual void       ApplyPending()                        = 0; // Removes the (id, comp) mark for removal, and then adds the (id, comp) mark for addition 
+		virtual            ~IComponentStoreBase()                = default;
+	};
+
 	/// <summary>
 	/// IComponentStore is the interface for the container that stores the component data of a given type T 
 	/// and the mapping between entity_id and the data.
 	/// </summary>
 	/// <typeparam name="T">A Default-contratable type that holds the data of an component</typeparam>
 	template<typename T>
-	class IComponentStore
+	class IComponentStore : public IComponentStoreBase
 	{
 	public:
 		virtual            ~IComponentStore()                      = default;
 	public:
 		virtual void       AddComponent(entity_id id, T component) = 0; // Marks the (Entity id, component) mapping for addition
-		virtual void       RemoveComponent(entity_id id)           = 0; // Marks the (Entity id, component) mapping for removal if it exist
-		virtual bool       HasComponent(entity_id id) const        = 0; // Returns true if Entity id is mapped to the component, otherwise false
 		virtual T*         GetComponent(entity_id id)              = 0; // Returns a pointer to the component mapped to the Entity id, otherwise nullptr if no mapping exits
-		virtual void       ApplyPending()                          = 0; // Removes the (id, comp) mark for removal, and then adds the (id, comp) mark for addition 
-	public:
-		virtual leo_size_t NumOfComponents() const                 = 0; // Returns the number of Entity id mapped to a component
-		virtual leo_size_t MaxCapacity() const                     = 0; // The Maximum capacity, how many (Entity id, component) mapping can we store
 	protected:
 		/// <summary>
 		/// Returns the index of the first valid (existing) entity at or after `from`.
@@ -312,6 +320,136 @@ namespace LEO
 		std::vector<std::pair<entity_id, T>> m_toAdd;
 		std::vector<entity_id> m_toRemove;
 	};
+
+
+	class ISystem
+	{
+	public:
+		virtual ~ISystem()          = default;
+		virtual void Update(f32 dt) = 0;
+	};
+
+	class EntityManager final
+	{
+	public:
+		EntityManager() = default;
+	public:
+		// ===== System lifecycle =====
+
+		void RegisterSystem(std::unique_ptr<ISystem> system)
+		{
+			m_systems.emplace_back(std::move(system));
+		}
+	public:
+		// ===== Entity lifecycle =====
+
+		entity_id CreateEntity()
+		{
+			if (m_freeIDs.empty())
+			{
+				return m_nextId++;
+			}
+			entity_id id = m_freeIDs.back();
+			m_freeIDs.pop_back();
+			return id;
+		}
+
+		void DestroyEntity(entity_id id)
+		{
+			// Remove entity from all component stores
+			for (auto& [typeId, store] : m_componentStores)
+			{
+				if (store->HasComponent(id))
+				{
+					store->RemoveComponent(id);
+				}		
+			}
+
+			// Mark ID as free again
+			m_freeIDs.push_back(id);
+		}
+	public:
+		// ===== Component store methods =====
+
+		template<typename T>
+		void RegisterStore(std::unique_ptr<IComponentStore<T>> store)
+		{
+			const std::type_index typeId = typeid(T);
+			m_componentStores[typeId] = std::move(store);
+		}
+
+		template<typename T>
+		IComponentStore<T>* GetStore()
+		{
+			const std::type_index typeId = typeid(T);
+			auto it = m_componentStores.find(typeId);
+			if (it == m_componentStores.end())
+			{
+				return nullptr;
+			}
+	
+			return static_cast<IComponentStore<T>*>(it->second.get());
+		}
+	public:
+		// ===== Component store methods =====
+
+		template<typename T>
+		void AddComponent(entity_id id, T component)
+		{
+			if (auto* store = GetStore<T>()) {
+				store->AddComponent(id, std::move(component));
+			}				
+		}
+
+		template<typename T>
+		void RemoveComponent(entity_id id)
+		{
+			if (auto* store = GetStore<T>()) {
+				if (store->HasComponent(id)){
+					store->RemoveComponent(id);
+				}		
+			}	
+		}
+
+		template<typename T>
+		bool HasComponent(entity_id id) const
+		{
+			if (auto* store = GetStore<T>()) {
+				return store->HasComponent(id);
+			}
+			return false;
+		}
+
+		template<typename T>
+		T* GetComponent(entity_id id)
+		{
+			if (auto* store = GetStore<T>())
+			{
+				return store->GetComponent(id);
+			}
+			return nullptr;
+		}
+	public:
+		void Update(f32 dt)
+		{
+			for (auto& system : m_systems) 
+			{
+				system->Update(dt);
+			}
+
+			for (auto& [_, store] : m_componentStores)
+			{
+				store->ApplyPending();
+			}			
+		}
+	private:
+		entity_id m_nextId = 0;
+		std::vector<entity_id> m_freeIDs;
+
+		std::vector<std::unique_ptr<ISystem>> m_systems;
+		std::unordered_map<std::type_index, std::unique_ptr<IComponentStoreBase>> m_componentStores;
+	};
+
 
 
 }
