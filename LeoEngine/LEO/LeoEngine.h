@@ -5,4 +5,6 @@
 
 #include "Window/Window.h"
 
-#include "ECS/leo_ecs.h"
+#include "ECS/EntityManager.h"
+#include "ECS/ComponentArray.h"
+#include "ECS/ComponentStoreSparse.h"

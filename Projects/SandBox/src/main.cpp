@@ -10,38 +10,25 @@ struct Sphere
 	i32 hp;
 };
 
-#define MAX_ENTITIES 200
+#define MAX_ENTITIES 500
 
-static LEO::entity_id next_id = 0;
-static std::vector<LEO::entity_id> m_free_ids;
-
-static LEO::ComponentArray<Sphere, MAX_ENTITIES> sphere_store;
-//static LEO::SparseComponentStore<Sphere> sphere_store;
-
+static LEO::EntityManager entity_manager;
 
 static void CreateEntity(const Sphere& sphere)
 {
-	if (m_free_ids.empty())
-	{
-		sphere_store.AddComponent(next_id, sphere);
-		next_id++;
-	}
-	else
-	{
-		sphere_store.AddComponent(m_free_ids.back(), sphere);
-		m_free_ids.pop_back();
-	}
+	LEO::entity_id id = entity_manager.CreateEntity();
+	entity_manager.AddComponent(id, sphere);
 }
 
 static void DestroyEntity(LEO::entity_id id)
 {
-	sphere_store.RemoveComponent(id);
-	m_free_ids.emplace_back(id);
+	entity_manager.DestroyEntity(id);
 }
-
 
 static void Init()
 {
+	entity_manager.RegisterComponentStore<Sphere>(std::make_unique<LEO::ComponentArray<Sphere, MAX_ENTITIES>>());
+
 	for (i32 i = 0; i < MAX_ENTITIES / 2; i++)
 	{
 		CreateEntity(Sphere{ {LEO::RandFloat(0.0f, 1600.0f), LEO::RandFloat(0.0f, 900.0f)}, 
@@ -51,7 +38,7 @@ static void Init()
 
 static void SpawnSystem()
 {
-	for (auto [i, sphere] : sphere_store)
+	for (auto [i, sphere] : *entity_manager.GetComponentStore<Sphere>())
 	{
 		if (sphere.hp <= 0) {
 			DestroyEntity(i);
@@ -68,22 +55,23 @@ static void SpawnSystem()
 
 static void MoveSystem()
 {
-	for (auto [i, sphere] : sphere_store) 
-	{
+	entity_manager.ForEach<Sphere>([](LEO::entity_id id, Sphere& sphere){
 		sphere.pos += sphere.vel * LEO::DeltaTime();
 
 		const f32 r = sphere.radius;
 		const f32 winW = (f32)LEO::WinWidth();
 		const f32 winH = (f32)LEO::WinHeight();
-		if (sphere.pos.x - r < 0)    { sphere.pos.x = r;         sphere.vel.x *= -1; }
+		if (sphere.pos.x - r < 0) { sphere.pos.x = r;         sphere.vel.x *= -1; }
 		if (sphere.pos.x + r > winW) { sphere.pos.x = winW - r;  sphere.vel.x *= -1; }
-		if (sphere.pos.y - r < 0)    { sphere.pos.y = r;         sphere.vel.y *= -1; }
+		if (sphere.pos.y - r < 0) { sphere.pos.y = r;         sphere.vel.y *= -1; }
 		if (sphere.pos.y + r > winH) { sphere.pos.y = winH - r;  sphere.vel.y *= -1; }
-	}
+	});
 }
 
 static void CollisionSystem()
 {
+	auto& sphere_store = *entity_manager.GetComponentStore<Sphere>();
+
 	for (auto itA = sphere_store.begin(); itA != sphere_store.end(); ++itA)
 	{
 		Sphere& a = (*itA).comp;
@@ -118,7 +106,7 @@ static void CollisionSystem()
 static void RenderSystem()
 {
 	u32 count = 0;
-	for(auto [i, sphere] : sphere_store) 
+	for(auto [i, sphere] : *entity_manager.GetComponentStore<Sphere>())
 	{
 		LEO::Color color = sphere.radius <= 10.0f ? LEO_DARKGREEN : LEO_BLEU;
 		color = sphere.radius <= 5.0f ? LEO_RED : color;
@@ -134,8 +122,7 @@ static void RenderSystem()
 	ImGui::Begin("Stress Test");
 	ImGui::Text("FPS: %u", LEO::CurrentFPS());
 	ImGui::Text("Sphere count we saw: %u", count);
-	ImGui::Text("Sphere count exits: %u", sphere_store.NumOfComponents());
-	ImGui::Text("Sphere next id: %u", next_id);
+	ImGui::Text("Sphere count exits: %u", entity_manager.GetComponentStore<Sphere>()->NumOfComponents());
 	ImGui::End();
 }
 
@@ -150,7 +137,7 @@ int main(int argc, char** argv)
 	LEO::RandSetSeed(1234);
 	
 	Init();
-	sphere_store.ApplyPending();
+	entity_manager.Update();
 
 	while (!LEO::ShouldCloseWindow())
 	{
@@ -161,7 +148,7 @@ int main(int argc, char** argv)
 		CollisionSystem();
 		RenderSystem();
 
-		sphere_store.ApplyPending();
+		entity_manager.Update();
 
 		LEO::EndFrame();
 	}
