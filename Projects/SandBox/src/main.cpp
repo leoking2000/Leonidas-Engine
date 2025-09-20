@@ -10,8 +10,7 @@ struct Sphere
 	i32 hp;
 };
 
-#define MAX_ENTITIES 500
-
+constexpr u32 MAX_ENTITIES = 500;
 static LEO::EntityManager entity_manager;
 
 static void CreateEntity(const Sphere& sphere)
@@ -38,18 +37,17 @@ static void Init()
 
 static void SpawnSystem()
 {
-	for (auto [i, sphere] : *entity_manager.GetComponentStore<Sphere>())
-	{
+	entity_manager.ForEach<Sphere>([](LEO::entity_id id, Sphere& sphere){
 		if (sphere.hp <= 0) {
-			DestroyEntity(i);
+			DestroyEntity(id);
 
-			if (sphere.radius <= 5.0f) continue;
+			if (sphere.radius <= 5.0f) return;
 
 			const f32 r = sphere.radius / 2.0f;
 			CreateEntity(Sphere{ sphere.pos, r, LEO::RandDir2D(150.0f), 5 });
 			CreateEntity(Sphere{ sphere.pos, r, LEO::RandDir2D(150.0f), 5 });
 		}
-	}
+	});
 
 }
 
@@ -106,17 +104,16 @@ static void CollisionSystem()
 static void RenderSystem()
 {
 	u32 count = 0;
-	for(auto [i, sphere] : *entity_manager.GetComponentStore<Sphere>())
-	{
+	entity_manager.ForEach<Sphere>([&](LEO::entity_id id, Sphere& sphere) {
 		LEO::Color color = sphere.radius <= 10.0f ? LEO_DARKGREEN : LEO_BLEU;
 		color = sphere.radius <= 5.0f ? LEO_RED : color;
 
 		LEO::RenderCircle(sphere.pos, sphere.radius, color);
 
-		LEOLOGVERBOSE("id {}", i);
+		LEOLOGVERBOSE("id {}", id);
 
 		count += 1;
-	}
+	});
 
 	// ImGui window
 	ImGui::Begin("Stress Test");
