@@ -3,7 +3,7 @@
 #include <memory>
 #include <typeindex>
 #include <vector>
-#include <functional>
+#include <algorithm>
 
 #include "IComponentStore.h"
 
@@ -38,7 +38,7 @@ namespace LEO
 
 		void DestroyEntity(entity_id id)
 		{
-			for (auto& [_, store] : m_componentStores)
+			for (auto& [i, store] : m_componentStores)
 			{
 				if (store->HasComponent(id)) {
 					store->RemoveComponent(id);

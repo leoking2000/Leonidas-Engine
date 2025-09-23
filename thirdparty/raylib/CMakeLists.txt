@@ -4,7 +4,7 @@ project(raylib)
 # MultiThreaded compilation
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug$<$<CONFIG:Debug>:Debug>")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) #link time optimization
+#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) #link time optimization
 
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

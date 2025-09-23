@@ -4,24 +4,17 @@
 
 int main()
 {
-	LEO::CreateWindow(1600, 900, "Asteroids");
+	LEO::CreateWindow(1600, 900, "Asteroids", LEO::WIN_FLAG_ESC_CLOSE);
 
 	LEO::SetClearColor(LEO_BLACK);
-	bool game_over = false;
-
 	Game game;
 
-	while (!LEO::ShouldCloseWindow() && !game_over)
+	while (!LEO::ShouldCloseWindow())
 	{
 		LEO::StartFrame();
 
 		game.UpdateGame();
 		game.RenderGame();
-
-		if (LEO::KeyDown(LEO::KEY_ESCAPE)) { game_over = true; }
-
-		std::string title = std::format("Leonidas Engine FPS:{}", LEO::CurrentFPS());
-		LEO::SetWinTitle(title);
 
 		LEO::EndFrame();
 	}

@@ -1,5 +1,5 @@
 #include <LEO/LeoEngine.h>
-#include <Imgui/imgui.h>
+#include <imgui/imgui.h>
 
 // Components
 struct Sphere
