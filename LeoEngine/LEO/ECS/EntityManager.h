@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "ISystem.h"
 #include "IComponentStore.h"
 
 
@@ -102,8 +103,13 @@ namespace LEO
 			return nullptr;
 		}
 	public:
-		void Update()
+		void Update(f32 dt)
 		{
+			for(auto& sys : m_systems)
+			{
+				sys->Update(dt);
+			}
+
 			for (auto& [_, store] : m_componentStores)
 			{
 				store->ApplyPending();
@@ -121,12 +127,30 @@ namespace LEO
 				update(id, comp);
 			}
 		}
+	public:
+		// Register an already-constructed system
+		void RegisterSystem(std::unique_ptr<ISystem> system)
+		{
+			system->SetEntityManager(this);
+			m_systems.emplace_back(std::move(system));
+		}
+
+		// Construct and register a system in-place
+		template<typename T, typename... Args>
+		void RegisterSystem(Args&&... args)
+		{
+			static_assert(std::is_base_of_v<ISystem, T>, "T must inherit from ISystem"); // use consepts maybe????
+
+			auto sys = std::make_unique<T>(std::forward<Args>(args)...);
+			sys->SetEntityManager(this);
+			m_systems.emplace_back(std::move(sys));
+		}	
 	private:
 		entity_id m_nextId = 0;
 		std::vector<entity_id> m_freeIds; // maybe use a std::unordered_set<entity_id> (check which is faster)
 
 		std::unordered_map<std::type_index, std::unique_ptr<IComponentStoreBase>> m_componentStores;
+
+		std::vector<std::unique_ptr<ISystem>> m_systems;
 	};
-
-
 }

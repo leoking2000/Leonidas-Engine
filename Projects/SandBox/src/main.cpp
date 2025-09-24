@@ -1,3 +1,5 @@
+#include "ECS/ISystem.h"
+#include "Window/Window.h"
 #include <LEO/LeoEngine.h>
 #include <imgui/imgui.h>
 
@@ -35,94 +37,108 @@ static void Init()
 	}
 }
 
-static void SpawnSystem()
+class SpawnSystem : public LEO::ISystem
 {
-	entity_manager.ForEach<Sphere>([](LEO::entity_id id, Sphere& sphere){
-		if (sphere.hp <= 0) {
-			DestroyEntity(id);
-
-			if (sphere.radius <= 5.0f) return;
-
-			const f32 r = sphere.radius / 2.0f;
-			CreateEntity(Sphere{ sphere.pos, r, LEO::RandDir2D(150.0f), 5 });
-			CreateEntity(Sphere{ sphere.pos, r, LEO::RandDir2D(150.0f), 5 });
-		}
-	});
-
-}
-
-static void MoveSystem()
-{
-	entity_manager.ForEach<Sphere>([](LEO::entity_id id, Sphere& sphere){
-		sphere.pos += sphere.vel * LEO::DeltaTime();
-
-		const f32 r = sphere.radius;
-		const f32 winW = (f32)LEO::WinWidth();
-		const f32 winH = (f32)LEO::WinHeight();
-		if (sphere.pos.x - r < 0) { sphere.pos.x = r;         sphere.vel.x *= -1; }
-		if (sphere.pos.x + r > winW) { sphere.pos.x = winW - r;  sphere.vel.x *= -1; }
-		if (sphere.pos.y - r < 0) { sphere.pos.y = r;         sphere.vel.y *= -1; }
-		if (sphere.pos.y + r > winH) { sphere.pos.y = winH - r;  sphere.vel.y *= -1; }
-	});
-}
-
-static void CollisionSystem()
-{
-	auto& sphere_store = *entity_manager.GetComponentStore<Sphere>();
-
-	for (auto itA = sphere_store.begin(); itA != sphere_store.end(); ++itA)
+public:
+	virtual void Update(f32 dt) override
 	{
-		Sphere& a = (*itA).comp;
-		for (auto itB = itA.next(); itB != sphere_store.end(); ++itB)
+		p_entityManager->ForEach<Sphere>([](LEO::entity_id id, Sphere& sphere){
+			if (sphere.hp <= 0) {
+				DestroyEntity(id);
+
+				if (sphere.radius <= 5.0f) return;
+
+				const f32 r = sphere.radius / 2.0f;
+				CreateEntity(Sphere{ sphere.pos, r, LEO::RandDir2D(150.0f), 5 });
+				CreateEntity(Sphere{ sphere.pos, r, LEO::RandDir2D(150.0f), 5 });
+			}
+		});
+	}
+};
+
+class MoveSystem : public LEO::ISystem
+{
+public:
+	virtual void Update(f32 dt) override
+	{
+		p_entityManager->ForEach<Sphere>([&](LEO::entity_id id, Sphere& sphere){
+			sphere.pos += sphere.vel * dt;
+
+			const f32 r = sphere.radius;
+			const f32 winW = (f32)LEO::WinWidth();
+			const f32 winH = (f32)LEO::WinHeight();
+			if (sphere.pos.x - r < 0) { sphere.pos.x = r;         sphere.vel.x *= -1; }
+			if (sphere.pos.x + r > winW) { sphere.pos.x = winW - r;  sphere.vel.x *= -1; }
+			if (sphere.pos.y - r < 0) { sphere.pos.y = r;         sphere.vel.y *= -1; }
+			if (sphere.pos.y + r > winH) { sphere.pos.y = winH - r;  sphere.vel.y *= -1; }
+		});
+	}
+};
+
+class CollisionSystem : public LEO::ISystem
+{
+public:
+	virtual void Update(f32 dt) override
+	{
+		auto& sphere_store = *p_entityManager->GetComponentStore<Sphere>();
+
+		for (auto itA = sphere_store.begin(); itA != sphere_store.end(); ++itA)
 		{
-			Sphere& b = (*itB).comp;
-
-			glm::vec2 delta = b.pos - a.pos;
-			float dist2 = glm::dot(delta, delta);
-			float r = a.radius + b.radius;
-
-			if (dist2 < r * r) // collision!
+			Sphere& a = (*itA).comp;
+			for (auto itB = itA.next(); itB != sphere_store.end(); ++itB)
 			{
-				float dist = std::sqrt(dist2);
-				if (dist == 0.0f) dist = 0.01f; // avoid divide by zero
-				glm::vec2 normal = delta / dist;
-				// Push spheres apart by half the overlap each
-				float overlap = 0.5f * (r - dist);
-				a.pos -= normal * overlap;
-				b.pos += normal * overlap;
-				// Reflect velocities along the collision normal
-				a.vel = glm::reflect(a.vel, normal);
-				b.vel = glm::reflect(b.vel, -normal);
-				a.hp -= 1;
-				b.hp -= 1;
+				Sphere& b = (*itB).comp;
+
+				glm::vec2 delta = b.pos - a.pos;
+				float dist2 = glm::dot(delta, delta);
+				float r = a.radius + b.radius;
+
+				if (dist2 < r * r) // collision!
+				{
+					float dist = std::sqrt(dist2);
+					if (dist == 0.0f) dist = 0.01f; // avoid divide by zero
+					glm::vec2 normal = delta / dist;
+					// Push spheres apart by half the overlap each
+					float overlap = 0.5f * (r - dist);
+					a.pos -= normal * overlap;
+					b.pos += normal * overlap;
+					// Reflect velocities along the collision normal
+					a.vel = glm::reflect(a.vel, normal);
+					b.vel = glm::reflect(b.vel, -normal);
+					a.hp -= 1;
+					b.hp -= 1;
+				}
 			}
 		}
-	}
-}
+	}	
 
+};
 
-static void RenderSystem()
+class RenderSystem : public LEO::ISystem
 {
-	u32 count = 0;
-	entity_manager.ForEach<Sphere>([&](LEO::entity_id id, Sphere& sphere) {
-		LEO::Color color = sphere.radius <= 10.0f ? LEO_DARKGREEN : LEO_BLEU;
-		color = sphere.radius <= 5.0f ? LEO_RED : color;
+public:
+	virtual void Update(f32 dt) override
+	{
+		u32 count = 0;
+		p_entityManager->ForEach<Sphere>([&](LEO::entity_id id, Sphere& sphere) {
+			LEO::Color color = sphere.radius <= 10.0f ? LEO_DARKGREEN : LEO_BLEU;
+			color = sphere.radius <= 5.0f ? LEO_RED : color;
 
-		LEO::RenderCircle(sphere.pos, sphere.radius, color);
+			LEO::RenderCircle(sphere.pos, sphere.radius, color);
 
-		LEOLOGVERBOSE("id {}", id);
+			LEOLOGVERBOSE("id {}", id);
 
-		count += 1;
-	});
+			count += 1;
+		});
 
-	// ImGui window
-	ImGui::Begin("Stress Test");
-	ImGui::Text("FPS: %u", LEO::CurrentFPS());
-	ImGui::Text("Sphere count we saw: %u", count);
-	ImGui::Text("Sphere count exits: %u", entity_manager.GetComponentStore<Sphere>()->NumOfComponents());
-	ImGui::End();
-}
-
+		// ImGui window
+		ImGui::Begin("Stress Test");
+		ImGui::Text("FPS: %u", LEO::CurrentFPS());
+		ImGui::Text("Sphere count we saw: %u", count);
+		ImGui::Text("Sphere count exits: %u", entity_manager.GetComponentStore<Sphere>()->NumOfComponents());
+		ImGui::End();
+	}
+};
 
 int main(int argc, char** argv)
 {
@@ -134,19 +150,15 @@ int main(int argc, char** argv)
 	LEO::RandSetSeed(1234);
 	
 	Init();
-	entity_manager.Update();
+	entity_manager.RegisterSystem<MoveSystem>();
+	entity_manager.RegisterSystem<CollisionSystem>();
+	entity_manager.RegisterSystem<SpawnSystem>();
+	entity_manager.RegisterSystem<RenderSystem>();
 
 	while (!LEO::ShouldCloseWindow())
 	{
 		LEO::StartFrame();
-
-		SpawnSystem();
-		MoveSystem();
-		CollisionSystem();
-		RenderSystem();
-
-		entity_manager.Update();
-
+		entity_manager.Update(LEO::DeltaTime());
 		LEO::EndFrame();
 	}
 
