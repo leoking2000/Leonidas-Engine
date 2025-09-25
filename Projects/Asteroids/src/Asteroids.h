@@ -1,6 +1,7 @@
 #pragma once
-#include <vector>
-#include "components.h"
+#include "ECS/IComponentStore.h"
+#include <LEO/ECS/EntityManager.h>
+
 
 class Game 
 {
@@ -15,12 +16,12 @@ public:
 	void UpdateGame();
 	void RenderGame();
 private:
-	void AddAsteroid(glm::vec2 pos);
-	void RemoveAsteroid(u32 index);
+	//void SpawnShip();
+	//void SpawnBullet(const glm::vec2 pos, const glm::vec2 dir);
+	//void SpawnAsteroid(const glm::vec2 pos, u32 size);
 private:
-	std::vector<Transform> m_transform_array;
-	std::vector<Polygon> m_polygons_array;
-	Input m_input = {};
+	LEO::EntityManager m_entityManager;
+	LEO::entity_id m_player_id = 0;
 };
 
 

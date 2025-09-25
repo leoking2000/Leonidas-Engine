@@ -1,5 +1,4 @@
 #include <LEO/LeoEngine.h>
-#include "components.h"
 #include "Asteroids.h"
 
 int main()

@@ -1,49 +1,71 @@
 #pragma once
+#include "glm/fwd.hpp"
 #include <LEO/LeoEngine.h>
 
 struct Transform
 {
 	glm::vec2 position      = glm::vec2(0.0f, 0.0f);
 	f32       rotation      = 0.0f;  // in radians
-	
+};
+
+struct Velocity
+{
 	glm::vec2 velocity      = glm::vec2(0.0f, 0.0f);
 	f32       rotationSpeed = 0.0f; // in radians
 };
 
 struct Input
 {
-	/// <summary>
-	/// x -> forward key down
-	/// y -> backward key down
-	/// z -> right rotation key down
-	/// a -> left rotation key down
-	/// </summary>
-	glm::bvec4 inputs;
+    enum Type : u8 {
+        Forward       = 1 << 0,
+        RightRotation = 1 << 1,
+        LeftRotation  = 1 << 2,
+        Shoot         = 1 << 3
+    };
+
+    u8 mask = 0;
+
+    inline bool IsDown(Type t) const { return (mask & t) != 0; }
+};
+
+struct Ship
+{
+	f32 speed           = 0.0f; 
+	f32 turnSpeed       = 0.0f; 
+	u32 score           = 0;
+};
+
+struct LifeTime
+{
+	f32 timeLeft = 0;
+};
+
+struct Sphere
+{
+	f32 radius = 0.0f;
+};
+
+struct HitPoints
+{
+	u32 hp = 0;
 };
 
 #define MAX_VERTICES 16
 struct Polygon
 {
-	u32       vertexCount;
-	glm::vec2 baseShape[MAX_VERTICES];
-	f32       approximateRadius;
+	u32       vertexCount                = 0;
+	glm::vec2 baseShape[MAX_VERTICES]    = {};
+	f32       approximateRadius          = 0.0f;
 };
 
 
-void UpdateTransform(Transform& t, f32 dt);
+void UpdateTransform(Transform& t, const Velocity& v, f32 dt);
+void BounceOffEdges(Transform& t, Velocity& v, f32 radius, f32 winW, f32 winH);
+void ApplyMovementInput(const Input& input, Transform& t, f32 speed, f32 turnSpeed, f32 dt);
 
-void BounceOffEdges(Transform& t, const Polygon& poly, f32 winW, f32 winH);
-
-/// <summary>
-/// Applies input to the transform by setting its velocity and rotation speed.
-/// Up/Down keys move the player forward/backward based on its facing direction.
-/// Left/Right keys rotate the player by setting its rotation speed.
-/// </summary>
-/// <param name="input">Input state (x=up, y=down, z=right, a=left).</param>
-/// <param name="t">Transform to update (velocity and rotationSpeed are set).</param>
-/// <param name="speed">Movement speed of the player.</param>
-/// <param name="rotationSpeed">Angular speed applied when rotating left/right.</param>
-void ApplyInput(const Input& input, Transform& t, f32 speed, f32 rotationSpeed, f32 maxSpeed);
+bool CheckCollisionSphere(const glm::vec2& a_pos, f32 a_radius, const glm::vec2& b_pos, f32 b_radius);
+void ResolveCollisionSphere(glm::vec2& a_pos, glm::vec2& a_vel, f32 a_radius, 
+	                          glm::vec2& b_pos, glm::vec2& b_vel, f32 b_radius);
 
 
 /// <summary>
@@ -58,35 +80,7 @@ void ApplyInput(const Input& input, Transform& t, f32 speed, f32 rotationSpeed, 
 /// <param name="vertex_dist_min">Minimum distance from the origin for any vertex (must be > 0).</param>
 /// <param name="vertex_dist_max">Maximum distance from the origin for any vertex (must be > vertex_dist_min).</param>
 /// <returns>A `Polygon` object containing the generated vertices and its average radius.</returns>
-Polygon GenerateRendomPolygon(u32 vertex_count, f32 vertex_dist_min, f32 vertex_dist_max);
-
-
-/// <summary>
-/// Checks whether two polygons are colliding by approximating them as circles.
-/// The circle radius is taken from the polygon's estimated radius, and collision
-/// is determined by comparing the squared distance between centers with the squared
-/// sum of their radii.
-/// </summary>
-/// <param name="t_a">Transform of the first polygon (position & velocity).</param>
-/// <param name="poly_a">Polygon data of the first polygon (approximated radius used).</param>
-/// <param name="t_b">Transform of the second polygon (position & velocity).</param>
-/// <param name="poly_b">Polygon data of the second polygon (approximated radius used).</param>
-/// <returns>True if the polygons (treated as circles) are colliding, false otherwise.</returns>
-bool CheckColitionPolygons(const Transform& t_a, const Polygon& poly_a,
-	const Transform& t_b, const Polygon& poly_b);
-
-// <summary>
-/// Resolves a collision between two polygons by approximating them as circles.
-/// Mass is assumed proportional to the circle radius. The function separates the
-/// circles to prevent overlap and applies an elastic collision response along the
-/// collision normal, updating their velocities based on relative mass.
-/// </summary>
-/// <param name="t_a">Transform of the first polygon (position & velocity).</param>
-/// <param name="poly_a">Polygon data of the first polygon (approximated radius used).</param>
-/// <param name="t_b">Transform of the second polygon (position & velocity).</param>
-/// <param name="poly_b">Polygon data of the second polygon (approximated radius used).</param>
-void ResolveCollisionPolygons(Transform& t_a, const Polygon& poly_a,
-	Transform& t_b, const Polygon& poly_b);
+Polygon GenerateRandomPolygon(u32 vertex_count, f32 vertex_dist_min, f32 vertex_dist_max);
 
 /// <summary>
 /// Renders a polygon by triangulating it into a fan of triangles.

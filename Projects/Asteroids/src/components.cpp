@@ -1,4 +1,3 @@
-#include <limits>
 #include <array>
 #include "components.h"
 
@@ -10,50 +9,42 @@ inline void WrapAngle(f32& angle)
 		angle += TWO_PI;
 }
 
-void UpdateTransform(Transform& t, f32 dt)
+void UpdateTransform(Transform& t, const Velocity& v, f32 dt)
 {
-	t.position += t.velocity * dt;
-	t.rotation += t.rotationSpeed * dt;
+	t.position += v.velocity * dt;
+	t.rotation += v.rotationSpeed * dt;
 	WrapAngle(t.rotation);
 }
 
-void BounceOffEdges(Transform& t, const Polygon& poly, f32 winW, f32 winH)
+void BounceOffEdges(Transform& t, Velocity& v, f32 radius, f32 winW, f32 winH)
 {
-	f32 r = poly.approximateRadius;
-	if (t.position.x - r < 0) { t.position.x = r; t.velocity.x *= -1; }
-	if (t.position.x + r > winW) { t.position.x = winW - r; t.velocity.x *= -1; }
-	if (t.position.y - r < 0) { t.position.y = r; t.velocity.y *= -1; }
-	if (t.position.y + r > winH) { t.position.y = winH - r; t.velocity.y *= -1; }
+	if (t.position.x - radius < 0) { t.position.x = radius; v.velocity.x *= -1; }
+	if (t.position.x + radius > winW) { t.position.x = winW - radius; v.velocity.x *= -1; }
+	if (t.position.y - radius < 0) { t.position.y = radius; v.velocity.y *= -1; }
+	if (t.position.y + radius > winH) { t.position.y = winH - radius; v.velocity.y *= -1; }
 }
 
-void ApplyInput(const Input& input, Transform& t, f32 speed, f32 rotationSpeed, f32 maxSpeed)
+void ApplyMovementInput(const Input& input, Transform& t, f32 speed, f32 turnSpeed, f32 dt)
 {
-	glm::vec2 dir(0.0f);
+	glm::vec2 direction = glm::vec2{ glm::cos(t.rotation), -glm::sin(t.rotation) };
 
-	// Movement (forward/backward relative to current rotation)
-	if (input.inputs.x) dir.y += 1.0f; // forward
-	if (input.inputs.y) dir.y -= 1.0f; // backward
+    if (input.IsDown(Input::Forward)) {
+        t.position += direction * speed * dt;
+    }
 
-	if (dir != glm::vec2(0.0f))
-	{
-		// Forward vector: 0 rotation = up, Y+ = down
-		glm::vec2 forward(-sin(t.rotation), -cos(t.rotation));
-		t.velocity += forward * dir.y * speed;
+    if (input.IsDown(Input::RightRotation)) {
+        t.rotation -= turnSpeed * dt;
+    }
 
-		if (glm::length2(t.velocity) > maxSpeed * maxSpeed)
-		{
-			t.velocity = glm::normalize(t.velocity) * maxSpeed;
-		}	
-	}
+    if (input.IsDown(Input::LeftRotation)) {
+        t.rotation += turnSpeed * dt;
+    }
 
-	// Rotation
-	t.rotationSpeed = 0.0f;
-	if (input.inputs.z) t.rotationSpeed -= rotationSpeed;  // rotate right
-	if (input.inputs.a) t.rotationSpeed += rotationSpeed;  // rotate left
+    WrapAngle(t.rotation); // keep rotation bounded
 }
 
 
-Polygon GenerateRendomPolygon(u32 vertex_count, f32 vertex_dist_min, f32 vertex_dist_max)
+Polygon GenerateRandomPolygon(u32 vertex_count, f32 vertex_dist_min, f32 vertex_dist_max)
 {
 	LEOASSERTF(vertex_count >= 3u, "Max vertex count can't be less that three, {} provided", vertex_count);
 	LEOASSERTF(vertex_count <= MAX_VERTICES, "Max vertex count can't be more than {}, {} provided", MAX_VERTICES, vertex_count);
@@ -89,52 +80,51 @@ Polygon GenerateRendomPolygon(u32 vertex_count, f32 vertex_dist_min, f32 vertex_
 	return poly;
 }
 
-bool CheckColitionPolygons(const Transform& t_a, const Polygon& poly_a,
-	                       const Transform& t_b, const Polygon& poly_b)
+bool CheckCollisionSphere(const glm::vec2& a_pos, f32 a_radius, const glm::vec2& b_pos, f32 b_radius)
 {
 	// Treat polygons as circles with given radius
-	float dist2 = glm::length2(t_a.position - t_b.position);
-	float radiusSum = poly_a.approximateRadius + poly_b.approximateRadius;
+	f32 dist2 = glm::length2(a_pos - b_pos);
+	f32 radiusSum = a_radius + b_radius;
 	return dist2 <= (radiusSum * radiusSum);
 }
 
-void ResolveCollisionPolygons(Transform& t_a, const Polygon& poly_a,
-	                          Transform& t_b, const Polygon& poly_b)
+void ResolveCollisionSphere(glm::vec2& a_pos, glm::vec2& a_vel, f32 a_radius, 
+	                          glm::vec2& b_pos, glm::vec2& b_vel, f32 b_radius)
 {
-	if (!CheckColitionPolygons(t_a, poly_a, t_b, poly_b))
+	if (!CheckCollisionSphere(a_pos, a_radius, b_pos, b_radius))
 		return;
 
-	glm::vec2 diff = t_b.position - t_a.position;
+	glm::vec2 diff = b_pos - a_pos;
 	float dist = glm::length(diff);
 	if (dist == 0.0f) return;
 
 
 	glm::vec2 normal = diff / dist;
-	float penetration = (poly_a.approximateRadius + poly_b.approximateRadius) - dist;
+	float penetration = (a_radius + b_radius) - dist;
 
 
 	// Mass proportional to radius
-	float massA = poly_a.approximateRadius;
-	float massB = poly_b.approximateRadius;
+	float massA = a_radius;
+	float massB = b_radius;
 	float totalMass = massA + massB;
 
 
 	// Separate based on relative mass
-	t_a.position -= normal * (penetration * (massB / totalMass));
-	t_b.position += normal * (penetration * (massA / totalMass));
+	a_pos -= normal * (penetration * (massB / totalMass));
+	b_pos += normal * (penetration * (massA / totalMass));
 
 
 	// Velocity resolution (elastic collision along normal)
-	float va = glm::dot(t_a.velocity, normal);
-	float vb = glm::dot(t_b.velocity, normal);
+	float va = glm::dot(a_vel, normal);
+	float vb = glm::dot(b_vel, normal);
 
 
 	float newVa = (va * (massA - massB) + 2.0f * massB * vb) / totalMass;
 	float newVb = (vb * (massB - massA) + 2.0f * massA * va) / totalMass;
 
 
-	t_a.velocity += (newVa - va) * normal;
-	t_b.velocity += (newVb - vb) * normal;
+	a_vel += (newVa - va) * normal;
+	b_vel += (newVb - vb) * normal;
 }
 
 void RenderPolygon(const Transform& t, const Polygon& poly, LEO::Color color)

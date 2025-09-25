@@ -2,6 +2,7 @@
 #include <array>
 #include <bitset>
 #include <vector>
+#include <algorithm>
 
 #include "IComponentStore.h"
 
