@@ -7,6 +7,8 @@
 
 #include "ISystem.h"
 #include "IComponentStore.h"
+#include "ComponentArray.h"
+#include "ComponentStoreSparse.h"
 
 
 namespace LEO
@@ -51,7 +53,7 @@ namespace LEO
 		template<typename T>
 		EntityManager& AddComponent(entity_id id, T component)
 		{
-			IComponentStore<T>* store = GetComponentStore<T>();
+			ComponentStore<T>* store = GetComponentStore<T>();
 			LEOASSERT(store != nullptr, "Component store has not been registered.");
 
 			store->AddComponent(id, std::move(component));
@@ -61,7 +63,7 @@ namespace LEO
 		template<typename T>
 		void RemoveComponent(entity_id id)
 		{
-			IComponentStore<T>* store = GetComponentStore<T>();
+			ComponentStore<T>* store = GetComponentStore<T>();
 			LEOASSERT(store != nullptr, "Component store has not been registered.");
 
 			store->RemoveComponent(id);
@@ -70,7 +72,7 @@ namespace LEO
 		template<typename T>
 		T* GetComponent(entity_id id)
 		{
-			IComponentStore<T>* store = GetComponentStore<T>();
+			ComponentStore<T>* store = GetComponentStore<T>();
 			LEOASSERT(store != nullptr, "Component store has not been registered.");
 
 			return store->GetComponent(id);
@@ -79,26 +81,38 @@ namespace LEO
 		template<typename T>
 		bool HasComponent(entity_id id) const
 		{
-			IComponentStore<T>* store = GetComponentStore<T>();
+			ComponentStore<T>* store = GetComponentStore<T>();
 			LEOASSERT(store != nullptr, "Component store has not been registered.");
 
 			return store->HasComponent(id);
 		}
 	public:
 		template<typename T>
-		void RegisterComponentStore(std::unique_ptr<IComponentStore<T>> store)
+		void RegisterComponentStore(std::unique_ptr<ComponentStore<T>> store)
 		{
 			const std::type_index typeId = typeid(T);
 			m_componentStores[typeId] = std::move(store);
 		}
 
+		// Dense (fixed capacity)
+		template<typename T, leo_size_t N>
+		void RegisterDenseStore() {
+			RegisterComponentStore<T>(std::make_unique<LEO::ComponentArray<T, N>>());
+		}
+
+		// Sparse (unordered_map-based)
 		template<typename T>
-		IComponentStore<T>* GetComponentStore() const
+		void RegisterSparseStore() {
+			RegisterComponentStore<T>(std::make_unique<LEO::ComponentStoreSparse<T>>());
+		}
+
+		template<typename T>
+		ComponentStore<T>* GetComponentStore() const
 		{
 			const std::type_index typeId = typeid(T);
 			auto it = m_componentStores.find(typeId);
 			if (it != m_componentStores.end()) {
-				return static_cast<IComponentStore<T>*>(it->second.get());
+				return static_cast<ComponentStore<T>*>(it->second.get());
 			}
 			return nullptr;
 		}
@@ -119,7 +133,7 @@ namespace LEO
 		template<typename T, typename Func>
 		void ForEach(Func&& update)
 		{
-			IComponentStore<T>* store = GetComponentStore<T>();
+			ComponentStore<T>* store = GetComponentStore<T>();
 			LEOASSERT(store != nullptr, "Component store has not been registered.");
 
 			for (auto [id, comp] : *store)
@@ -149,7 +163,7 @@ namespace LEO
 		entity_id m_nextId = 0;
 		std::vector<entity_id> m_freeIds; // maybe use a std::unordered_set<entity_id> (check which is faster)
 
-		std::unordered_map<std::type_index, std::unique_ptr<IComponentStoreBase>> m_componentStores;
+		std::unordered_map<std::type_index, std::unique_ptr<IComponentStore>> m_componentStores;
 
 		std::vector<std::unique_ptr<ISystem>> m_systems;
 	};

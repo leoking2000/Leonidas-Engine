@@ -1,8 +1,10 @@
 #pragma once
 #include <unordered_map>
+#include <vector>
 #include <algorithm>
 #include <limits>
 
+#include "LEO/Log/Log.h"
 #include "IComponentStore.h"
 
 namespace LEO
@@ -12,7 +14,7 @@ namespace LEO
 	/// </summary>
 	/// <typeparam name="T">A Default-contratable type that holds the data of an component</typeparam>
 	template<typename T>
-	class ComponentStoreSparse : public IComponentStore<T>
+	class ComponentStoreSparse : public ComponentStore<T>
 	{
 	public:
 		ComponentStoreSparse() = default;
@@ -59,7 +61,7 @@ namespace LEO
 			return static_cast<leo_size_t>(m_data.size());
 		}
 
-		// The Maximum capacity — conceptually "unbounded" here
+		// The Maximum capacity conceptually "unbounded" here
 		virtual leo_size_t MaxCapacity() const override
 		{
 			return std::numeric_limits<leo_size_t>::max();

@@ -1,10 +1,6 @@
-#include <LEO/ECS/ComponentArray.h>
-#include <LEO/ECS/ComponentStoreSparse.h>
-
 #include "Asteroids.h"
 #include "Window/Window.h"
 #include "components.h"
-#include "glm/ext/scalar_constants.hpp"
 
 #define PLAYER_SIZE 20.0f
 #define PLAYER_ACCEL 2.0f
@@ -15,16 +11,16 @@
 
 Game::Game()
 {
-	m_entityManager.RegisterComponentStore<Transform>(std::make_unique<LEO::ComponentArray<Transform, MAX_ENTITIES>>());
-	m_entityManager.RegisterComponentStore<Velocity>(std::make_unique<LEO::ComponentArray<Velocity, MAX_ENTITIES>>());
+	m_entityManager.RegisterDenseStore<Transform, MAX_ENTITIES>();
+	m_entityManager.RegisterDenseStore<Velocity, MAX_ENTITIES>();
 
-	m_entityManager.RegisterComponentStore<Input>(std::make_unique<LEO::ComponentStoreSparse<Input>>());
-	m_entityManager.RegisterComponentStore<Ship>(std::make_unique<LEO::ComponentStoreSparse<Ship>>());
+	m_entityManager.RegisterSparseStore<Input>();
+	m_entityManager.RegisterSparseStore<Ship>();
 
-	m_entityManager.RegisterComponentStore<LifeTime>(std::make_unique<LEO::ComponentArray<LifeTime, MAX_ENTITIES>>());
-	m_entityManager.RegisterComponentStore<Sphere>(std::make_unique<LEO::ComponentArray<Sphere, MAX_ENTITIES>>());
-	m_entityManager.RegisterComponentStore<HitPoints>(std::make_unique<LEO::ComponentArray<HitPoints, MAX_ENTITIES>>());
-	m_entityManager.RegisterComponentStore<Polygon>(std::make_unique<LEO::ComponentArray<Polygon, MAX_ENTITIES>>());
+	m_entityManager.RegisterDenseStore<LifeTime, MAX_ENTITIES>();
+	m_entityManager.RegisterDenseStore<Sphere, MAX_ENTITIES>();
+	m_entityManager.RegisterDenseStore<HitPoints, MAX_ENTITIES>();
+	m_entityManager.RegisterDenseStore<Polygon, MAX_ENTITIES>();
 
 	m_player_id = m_entityManager.CreateEntity();
 	m_entityManager.Update(0.0f);
@@ -59,9 +55,6 @@ void Game::UpdateGame()
 	Transform& player_t = *m_entityManager.GetComponent<Transform>(m_player_id);
 	ApplyMovementInput(input, player_t, 150.0f, 1.5f, LEO::DeltaTime());
 
-
-
-	
 	m_entityManager.Update(LEO::DeltaTime());
 }
 

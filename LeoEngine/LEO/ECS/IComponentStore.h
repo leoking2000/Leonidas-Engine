@@ -1,20 +1,19 @@
 #pragma once
-#include "LEO/Log/Log.h"
 
 namespace LEO
 {
-	// we hard limit entity number to 65.536, in reality (for small games) we will have less than 1000 entities!
+	// We hard limit entity number to 65.536, in reality (for small games) we will have less than 1000 entities!
 	using leo_size_t = u16;
-	using entity_id = leo_size_t;
+	using entity_id  = leo_size_t;
 
 	/// <summary>
-	/// IComponentStoreBase is used to hide IComponentStore<T>, the goal is to have a ponter to a store without knowing the T
-	/// used by the EntityManager
+	/// IComponentStore is used to hide ComponentStore<T>, the goal is to have a pointer to a store without knowing the T.
+	/// This class is used by the EntityManager. Do not use this class directly. Use ComponentStore<T> or EntityManager.
 	/// </summary>
-	class IComponentStoreBase
+	class IComponentStore
 	{
 	public:
-		virtual            ~IComponentStoreBase()                 = default;
+		virtual            ~IComponentStore()                     = default;
 	public:														  
 		virtual void       RemoveComponent(entity_id id)          = 0; // Marks the (Entity id, component) mapping for removal if it exist
 		virtual bool       HasComponent(entity_id id) const       = 0; // Returns true if Entity id is mapped to the component, otherwise false
@@ -25,22 +24,22 @@ namespace LEO
 	};
 
 	/// <summary>
-	/// IComponentStore is the interface for the container that stores the component data of a given type T 
+	/// ComponentStore is the interface for the container that stores the component data of a given type T 
 	/// and the mapping between entity_id and the data.
 	/// </summary>
 	/// <typeparam name="T">A Default-contratable type that holds the data of an component</typeparam>
 	template<typename T>
-	class IComponentStore : public IComponentStoreBase
+	class ComponentStore : public IComponentStore
 	{
 	public:
-		virtual       ~IComponentStore()                          = default;
+		virtual       ~ComponentStore()                           = default;
 	public:
 		virtual void  AddComponent(entity_id id, T component)     = 0; // Marks the (Entity id, component) mapping for addition
 		virtual T*    GetComponent(entity_id id)                  = 0; // Returns a pointer to the component mapped to the Entity id, otherwise nullptr if no mapping exits
 	protected:
 		/// <summary>
 		/// Returns the index of the first valid (existing) entity at or after `from`.
-		//  Returns MaxCapacity() if none are valid. Used internally by the iterator.
+		/// Returns MaxCapacity() if none are valid. Used internally by the iterator.
 		/// </summary>
 		virtual entity_id FindNextValidIndex(entity_id from) const = 0;
 	public:
@@ -50,7 +49,7 @@ namespace LEO
 		class ComponentIterator
 		{
 		public:
-			ComponentIterator(entity_id id, IComponentStore* store)
+			ComponentIterator(entity_id id, ComponentStore* store)
 				: m_current_id(id), m_store(store)
 			{
 				m_current_id = m_store->FindNextValidIndex(m_current_id);
@@ -83,7 +82,7 @@ namespace LEO
 				return it;
 			}
 		private:
-			IComponentStore* m_store;
+			ComponentStore* m_store;
 			entity_id m_current_id;
 		};
 	public:

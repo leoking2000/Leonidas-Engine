@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "LEO/Log/Log.h"
 #include "IComponentStore.h"
 
 namespace LEO
@@ -14,7 +15,7 @@ namespace LEO
 	/// <typeparam name="T">A Default-contratable type that holds the data of an component</typeparam>
 	/// <typeparam name="SIZE">the size of the std::array</typeparam>
 	template<typename T, leo_size_t SIZE>
-	class ComponentArray : public IComponentStore<T>
+	class ComponentArray : public ComponentStore<T>
 	{
 	public:
 		ComponentArray() { m_toAdd.reserve(SIZE); m_toRemove.reserve(SIZE); } // memory is cheap lol, ram go brrrr :D
