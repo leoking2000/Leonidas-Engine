@@ -1,3 +1,5 @@
+#include "Core/Application.h"
+
 #include "Utilities/Timer.h"
 #include "Utilities/LeoRand.h"
 
