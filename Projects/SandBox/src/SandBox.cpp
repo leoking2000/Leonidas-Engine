@@ -10,7 +10,8 @@ void SandBoxLayer::OnCreate()
 	LEO::SetClearColor(LEO_BLACK);
 	LEO::RandSetSeed(1234);
 
-    m_entityManager.RegisterComponentStore<Particle>(std::make_unique<LEO::ComponentArray<Particle, 500>>());
+	//m_entityManager.RegisterComponentStore<Particle>(std::make_unique<LEO::ComponentArray<Particle, 500>>());
+	m_entityManager.RegisterDenseStore<Particle, 500>();
 
 	for (i32 i = 0; i < 300; i++)
 	{

@@ -1,7 +1,6 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include <memory.h>
 
 #include "Layer.h"
 #include "Window/Window.h"
@@ -18,7 +17,7 @@ namespace LEO
         Application(Application&&) = delete;
         Application& operator=(Application&&) = delete;
 
-        ~Application();    
+        ~Application();
     public:
         void Run();
         void Stop();
