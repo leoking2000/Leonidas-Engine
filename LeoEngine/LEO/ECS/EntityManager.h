@@ -11,7 +11,7 @@
 #include "ComponentStoreSparse.h"
 
 
-namespace LEO
+namespace leo
 {
 	class EntityManager final
 	{
@@ -97,13 +97,13 @@ namespace LEO
 		// Dense (fixed capacity)
 		template<typename T, leo_size_t N>
 		void RegisterDenseStore() {
-			RegisterComponentStore<T>(std::make_unique<LEO::ComponentArray<T, N>>());
+			RegisterComponentStore<T>(std::make_unique<leo::ComponentArray<T, N>>());
 		}
 
 		// Sparse (unordered_map-based)
 		template<typename T>
 		void RegisterSparseStore() {
-			RegisterComponentStore<T>(std::make_unique<LEO::ComponentStoreSparse<T>>());
+			RegisterComponentStore<T>(std::make_unique<leo::ComponentStoreSparse<T>>());
 		}
 
 		template<typename T>

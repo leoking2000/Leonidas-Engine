@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Channel.h"
 
-namespace LEO
+namespace leo
 {
     void ConsoleChannel::Submit(const Entry& e) const
     {

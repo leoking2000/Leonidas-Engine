@@ -1,6 +1,7 @@
 #pragma once
+#include <LEO/Utilities/LeoTypes.h>
 
-namespace LEO 
+namespace leo
 {
     class EntityManager;
 

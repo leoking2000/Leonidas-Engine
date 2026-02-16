@@ -1,6 +1,6 @@
 #include "LogLevel.h"
 
-namespace LEO
+namespace leo
 {
     std::string_view GetLogLevelName(LogLevel level)
     {

@@ -2,7 +2,7 @@
 #include "Channel.h"
 #include <iostream>
 
-namespace LEO
+namespace leo
 {
     EntryBuilder::EntryBuilder(const char* file, const char* functionName, int line)
         :

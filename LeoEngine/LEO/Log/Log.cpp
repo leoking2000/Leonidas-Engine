@@ -1,7 +1,7 @@
 #include <assert.h>
 #include "Log.h"
 
-namespace LEO
+namespace leo
 {
 	static ConsoleChannel g_channel;
 

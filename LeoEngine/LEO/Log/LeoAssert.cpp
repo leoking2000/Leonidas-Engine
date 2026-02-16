@@ -1,6 +1,6 @@
 #include "Log.h"
 
-namespace LEO
+namespace leo
 {
 	Assertion::Assertion(const std::string& expression, const char* file, const char* functionName, int line, Consequence con)
 		:

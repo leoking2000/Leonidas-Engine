@@ -1,7 +1,8 @@
 #pragma once
 #include <string_view>
+#include <LEO/Utilities/LeoTypes.h>
 
-namespace LEO
+namespace leo
 {
     enum LogLevel : u8
     {

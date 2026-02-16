@@ -42,6 +42,6 @@ target_include_directories("${PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}
 
 ############ link libraries ############
 
-target_link_libraries("${PROJECT_NAME}" PRIVATE glm raylib imgui)
+target_link_libraries("${PROJECT_NAME}" PRIVATE glad glfw glm stb)
 
 ########################################

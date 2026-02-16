@@ -3,7 +3,7 @@
 #include <string>
 #include <sstream>
 
-namespace LEO
+namespace leo
 {
 	class Assertion
 	{
@@ -41,8 +41,8 @@ namespace LEO
 #define ZL_STR(x) ZZ_STR_(x)
 
 #if !PRODUCTION_BUILD
-	#define LEOASSERT(expr, msg) (bool(expr)) ? void(0) : (void)LEO::Assertion{ ZL_STR(expr), __FILE__, __FUNCTION__, __LINE__, LEO::Assertion::Consequence::Terminate }.note(msg)
-	#define LEOCHECK(expr, msg)  (bool(expr)) ? void(0) : (void)LEO::Assertion{ ZL_STR(expr), __FILE__, __FUNCTION__, __LINE__, LEO::Assertion::Consequence::Log }.note(msg)
+	#define LEOASSERT(expr, msg) (bool(expr)) ? void(0) : (void)leo::Assertion{ ZL_STR(expr), __FILE__, __FUNCTION__, __LINE__, leo::Assertion::Consequence::Terminate }.note(msg)
+	#define LEOCHECK(expr, msg)  (bool(expr)) ? void(0) : (void)leo::Assertion{ ZL_STR(expr), __FILE__, __FUNCTION__, __LINE__, leo::Assertion::Consequence::Log }.note(msg)
 
 	#define LEOASSERTF(expr, msg, ...) LEOASSERT(expr, std::format(msg, __VA_ARGS__))
 	#define LEOCHECKF(expr, msg, ...)  LEOCHECK(expr,  std::format(msg, __VA_ARGS__))

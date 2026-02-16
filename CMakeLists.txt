@@ -8,13 +8,13 @@ option(PRODUCTION_BUILD "Make this a production build" OFF)
 
 ###### Add Libraries ######
 
-add_subdirectory(thirdparty/raylib)         # core library
-add_subdirectory(thirdparty/imgui)          # for easy debuging
+add_subdirectory(thirdparty/glad)           # OpenGL loader
+add_subdirectory(thirdparty/glfw-3.3.2)     # window management
 add_subdirectory(thirdparty/glm)            # math library
+add_subdirectory(thirdparty/stb)            # texture read-write
 
 
 ##################################
 
 add_subdirectory(LeoEngine)
-add_subdirectory(Projects/SandBox)
-add_subdirectory(Projects/Asteroids)
+add_subdirectory(Projects/TestProject)

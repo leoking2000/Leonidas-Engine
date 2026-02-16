@@ -1,7 +1,7 @@
 #pragma once
 #include "Entry.h"
 
-namespace LEO
+namespace leo
 {
     class IChannel;
 

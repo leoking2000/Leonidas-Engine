@@ -2,7 +2,7 @@
 #include <string>
 #include "LogLevel.h"
 
-namespace LEO
+namespace leo
 {
     struct Entry
     {

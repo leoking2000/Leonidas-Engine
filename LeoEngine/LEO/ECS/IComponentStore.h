@@ -1,6 +1,7 @@
 #pragma once
+#include <LEO/Utilities/LeoTypes.h>
 
-namespace LEO
+namespace leo
 {
 	// We hard limit entity number to 65.536, in reality (for small games) we will have less than 1000 entities!
 	using leo_size_t = u16;

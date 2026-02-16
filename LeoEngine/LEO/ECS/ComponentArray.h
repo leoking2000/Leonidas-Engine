@@ -7,7 +7,7 @@
 #include "LEO/Log/Log.h"
 #include "IComponentStore.h"
 
-namespace LEO
+namespace leo
 {
 	/// <summary>
 	/// A IComponentStore that uses a std::array

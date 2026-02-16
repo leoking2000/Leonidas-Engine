@@ -1,52 +1,80 @@
-#include <random>
+#include <glm/gtc/constants.hpp>
+
 #include "LeoRand.h"
+#include "LEO/Log/LeoAssert.h"
 
-namespace LEO
+namespace leo
 {
-	static std::mt19937 rng{ std::random_device{}() }; // Default seeded with random_device
+    Random::Random()
+        : m_Rng(std::random_device{}())
+    {
+    }
 
-	void RandSetSeed(u32 seed)
-	{
-		rng.seed(seed);
-	}
+    Random::Random(u32 seed)
+        : m_Rng(seed)
+    {
+    }
 
-	i32 RandInt(i32 min, i32 max)
-	{
-		std::uniform_int_distribution<i32> dist(min, max);
-		return dist(rng);
-	}
+    void Random::SetSeed(u32 seed)
+    {
+        m_Rng.seed(seed);
+    }
 
-	u32 RandUInt(u32 min, u32 max)
-	{
-		std::uniform_int_distribution<u32> dist(min, max);
-		return dist(rng);
-	}
+    i32 Random::Int(i32 min, i32 max)
+    {
+        LEOASSERTF(min <= max, "Random.Int() was called with min={} max={}", min, max);
 
-	f32 RandFloat(f32 min, f32 max)
-	{
-		std::uniform_real_distribution<f32> dist(min, max);
-		return dist(rng);
-	}
+        std::uniform_int_distribution<i32> dist(min, max);
+        return dist(m_Rng);
+    }
 
-	glm::vec2 RandFloat2(f32 min, f32 max)
-	{
-		std::uniform_real_distribution<f32> dist(min, max);
-		return glm::vec2(dist(rng), dist(rng));
-	}
+    u32 Random::UInt(u32 min, u32 max)
+    {
+        LEOASSERTF(min <= max, "Random.UInt() was called with min={} max={}", min, max);
 
-	glm::vec3 RandFloat3(f32 min, f32 max)
-	{
-		std::uniform_real_distribution<f32> dist(min, max);
-		return glm::vec3(dist(rng), dist(rng), dist(rng));
-	}
+        std::uniform_int_distribution<u32> dist(min, max);
+        return dist(m_Rng);
+    }
 
-	glm::vec2 RandDir2D(f32 length)
-	{
-		return glm::circularRand(length);
-	}
+    f32 Random::Float(f32 min, f32 max)
+    {
+        LEOASSERTF(min <= max, "Random.Float() was called with min={} max={}", min, max);
 
-	glm::vec3 RandDir3D(f32 lenght)
-	{
-		return glm::sphericalRand(lenght);
-	}
+        std::uniform_real_distribution<f32> dist(min, max);
+        return dist(m_Rng);
+    }
+
+    glm::vec2 Random::Float2(f32 min, f32 max)
+    {
+        return { Float(min, max), Float(min, max) };
+    }
+
+    glm::vec3 Random::Float3(f32 min, f32 max)
+    {
+        return { Float(min, max), Float(min, max), Float(min, max) };
+    }
+
+    glm::vec2 Random::Dir2D(f32 length)
+    {
+        f32 angle = Float(0.0f, glm::two_pi<f32>());
+        return {
+            glm::cos(angle) * length,
+            glm::sin(angle) * length
+        };
+    }
+
+    glm::vec3 Random::Dir3D(f32 length)
+    {
+        // Uniform spherical distribution
+        f32 z = Float(-1.0f, 1.0f);
+        f32 theta = Float(0.0f, glm::two_pi<f32>());
+
+        f32 r = glm::sqrt(1.0f - z * z);
+
+        return {
+            r * glm::cos(theta) * length,
+            r * glm::sin(theta) * length,
+            z * length
+        };
+    }
 }

@@ -1,6 +1,6 @@
 #include "EntityManager.h"
 
-namespace LEO
+namespace leo
 {
 
 
