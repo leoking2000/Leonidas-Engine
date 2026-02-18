@@ -8,9 +8,7 @@ namespace leo
     class ISystem
     {
     public:
-        virtual void Init() {}
         virtual void Update(f32 dt) = 0;
-        virtual void Render() {}
     public:
         void SetEntityManager(EntityManager* entityManager) 
         { 

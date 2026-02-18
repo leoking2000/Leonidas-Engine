@@ -1,44 +1,53 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <iostream>
 
 #include <LEO/LeoEngine.h>
 
-static void init(GLFWwindow* window) 
+static void init(leo::Window& window)
 {
+	leo::Random rng(2025);
+
 	LEOLOGINFO("Hello!");
+
+	LEOLOGINFO("Random Numbers!!!");
+
+	LEOLOGINFO("Random ints {} {} {} {} {}", rng.Int(-2, 4), rng.Int(-2, 4), rng.Int(-2, 4), rng.Int(-2, 4), rng.Int(-2, 4));
+	LEOLOGINFO("Random Uints {} {} {} {} {}", rng.Int(2, 4), rng.Int(2, 4), rng.Int(2, 4), rng.Int(2, 4), rng.Int(2, 4));
+
+	leo::f32 foo = 0.0f;
 }
 
-static void display(GLFWwindow* window, double currentTime) 
+static void display(leo::Window& window)
 {
-	glClearColor(0.2, 0.2, 0.9, 1.0);
+	glClearColor(0.2f, 0.2f, 0.9f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
+}
+
+static void run()
+{
+	leo::Window window(1600, 800, "Leonidas Engine", leo::WIN_FLAG_VSYNC | leo::WIN_FLAG_ESC_CLOSE);
+
+	init(window);
+
+	while (!window.ShouldClose())
+	{
+		window.BeginFrame();
+
+		display(window);
+
+		window.SetTitle(std::format("FPS: {}", int(window.FPS())).c_str());
+
+		window.EndFrame();
+	}
 }
 
 int main(void) 
 {
-	if (!glfwInit()) { exit(EXIT_FAILURE); }
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	GLFWwindow* window = glfwCreateWindow(600, 600, "Leonidas Engine", NULL, NULL);
-	glfwMakeContextCurrent(window);
+	leo::WINInitialization();
+	
+	run();
 
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		exit(EXIT_FAILURE);
-	}
+	leo::WINTerminate();
 
-	glfwSwapInterval(1);
-
-	init(window);
-
-	while (!glfwWindowShouldClose(window)) {
-		display(window, glfwGetTime());
-		glfwSwapBuffers(window);
-		glfwPollEvents();
-	}
-
-	glfwDestroyWindow(window);
-	glfwTerminate();
-	exit(EXIT_SUCCESS);
+	return 0;
 }
