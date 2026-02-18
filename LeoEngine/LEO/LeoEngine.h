@@ -9,3 +9,5 @@
 #include "ECS/ComponentStoreSparse.h"
 
 #include "Platform/LeoWindow.h"
+
+#include "Graphics/LeoGraphics.h"

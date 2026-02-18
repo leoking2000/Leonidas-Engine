@@ -115,11 +115,6 @@ namespace leo
 
 		glfwMakeContextCurrent(m_window);
 		glfwSwapInterval(win_params.init_flags & WIN_FLAG_VSYNC ? 1 : 0);
-
-		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-		{
-			LEOASSERT(false, "gladLoadGLLoader failed!");
-		}
 	}
 
 	Window::Window(u32 width, u32 height, const std::string& title, u32 flags)
