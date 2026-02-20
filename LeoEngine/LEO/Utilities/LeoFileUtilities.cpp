@@ -9,9 +9,7 @@ namespace leo
 {
     ImageData::~ImageData()
     {
-        if (data) {
-            FreeImageData(*this);
-        }
+        FreeImageData(*this);
     }
 
     std::string ReadFile(const std::string& filepath)
@@ -20,6 +18,7 @@ namespace leo
 
         if (!input_file.is_open())
         {
+            //LEOLOGERROR("Failed to open file at {}", filepath.c_str());
             return std::string();
         }
 
@@ -41,7 +40,7 @@ namespace leo
 
         if (image_data.data == nullptr)
         {
-            LEOLOGERROR("Failed to Created Texture From: {}", filepath);
+            LEOLOGERROR("Failed to read image data From: {}", filepath);
             stbi_uc* data_error = new stbi_uc[16]{
                     255,   0, 255, 255, /**/   0,   0,   0, 255,
                       0,   0,   0, 255, /**/ 255,   0, 255, 255
@@ -55,11 +54,11 @@ namespace leo
         return image_data;
     }
 
-    void FreeImageData(ImageData data)
+    void FreeImageData(ImageData image_data)
     {
-        if (data.data && data.bpp != -1) 
+        if (image_data.data)
         {
-            stbi_image_free(data.data);
+            stbi_image_free(image_data.data);
         }
     }
 }

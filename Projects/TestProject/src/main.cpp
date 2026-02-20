@@ -5,44 +5,23 @@
 
 static void run()
 {
-	leo::Window window(1600, 800, "Leonidas Engine", leo::WIN_FLAG_VSYNC | leo::WIN_FLAG_ESC_CLOSE);
+	leo::WINInitialization();
+	leo::Window window(1600, 900, "Leonidas Engine", leo::WIN_FLAG_VSYNC | leo::WIN_FLAG_ESC_CLOSE);
+	window.Create();
+
 	leo::GraphicsInitialization();
 
-	leo::ShaderProgram shader(RESOURCES_PATH"Shaders/TestProject/Shader");
-
-	float vertexs[] = {
-		// pos       
-		 0.25f,  0.25f,
-		 0.25f, -0.25f,
-		-0.25f, -0.25f,
-	};
-
-	leo::VertexBuffer vertexBuffer(vertexs, sizeof(vertexs));
-
-	leo::ElementType arr[1] = { leo::ElementType::FLOAT2 };
-	leo::Layout<1> layout(arr);
-
-	leo::VertexArray vertexArray;
-	vertexArray.AddBuffer(std::move(vertexBuffer), layout);
-
-	// index buffer
-	uint32_t indices[] = {
-		0, 1, 2
-	};
-
-	leo::IndexBuffer indexBuffer(indices, 3);
-
-	leo::Mesh object(vertexArray, indexBuffer, 1);
+	glm::vec2 center = window.HalfSize();
 
 	leo::f32 offset = 0.0f;
-	leo::f32 speed = 1.0f;
+	leo::f32 speed = 400.0f;
 
 	while (!window.ShouldClose())
 	{
 		window.BeginFrame();
 		window.SetTitle(std::format("FPS: {}", int(window.FPS())).c_str());
 
-		if (offset > 0.5f || offset < -0.5f)
+		if (center.x + offset > 2*center.x || center.x + offset < 0)
 			speed *= -1.0f;
 
 		offset += speed * window.DeltaTime();
@@ -50,24 +29,19 @@ static void run()
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		shader.Bind();
-
-		shader.SetUniform("offset", offset);
-		object.Draw();
-
-		shader.UnBind();
-
+		window.DrawCircle(center.x + offset, center.y, 50, LEO_DARKBLUE);
 
 		window.EndFrame();
 	}
+
+	window.Destroy();
+	leo::WINTerminate();
 }
+
+
 int main(void) 
 {
-	leo::WINInitialization();
-	
 	run();
-
-	leo::WINTerminate();
 
 	return 0;
 }

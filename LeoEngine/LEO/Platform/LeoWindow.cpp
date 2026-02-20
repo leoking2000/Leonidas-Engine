@@ -1,5 +1,6 @@
 #include <thread>
 #include <glad/glad.h>
+#include <LEO/Graphics/LeoGraphics.h>
 #include <GLFW/glfw3.h> 
 #include <LEO/Log/Log.h>
 #include "LeoWindow.h"
@@ -46,8 +47,8 @@ namespace leo
 	{
 		Window::WinData* data = reinterpret_cast<Window::WinData*>(glfwGetWindowUserPointer(glfw_window));
 
-		data->width = (u32)width;
-		data->height = (u32)height;
+		data->params.width = (u32)width;
+		data->params.height = (u32)height;
 		glViewport(0, 0, width, height);
 
 		if (data->windowResizeCallback)
@@ -88,21 +89,34 @@ namespace leo
 
 	Window::Window(WindowsParameters win_params)
 	{
-		LEOASSERT(g_glfwInnit == true, "WIN system needs to be Initialized. call LEO::WINInitialization()");
+		m_data.params = win_params;
+	}
 
-		m_data.flags = win_params.init_flags;
-		m_data.width = win_params.width;
-		m_data.height = win_params.height;
+	Window::Window(u32 width, u32 height, const std::string& title, u32 flags)
+		:
+		Window({width, height, flags, title.c_str()})
+	{
+	}
+
+	//-----------------------------------------------------------
+
+	void Window::Create()
+	{
+		LEOASSERT(g_glfwInnit == true, "WIN system needs to be Initialized to create window call LEO::WINInitialization()");
 
 		// window hits
-		glfwWindowHint(GLFW_RESIZABLE, win_params.init_flags & WIN_FLAG_RESIZABLE ? GL_TRUE : GL_FALSE);
+		glfwWindowHint(GLFW_RESIZABLE, m_data.params.init_flags & WIN_FLAG_RESIZABLE ? GL_TRUE : GL_FALSE);
 		glfwWindowHint(GLFW_SAMPLES, 4);
 
 		// TODO: add fullscreen support
 
 		// create the window
-		m_window = glfwCreateWindow(win_params.width, win_params.height, win_params.title, NULL, NULL);
-		LEOASSERT(m_window != nullptr, "Window creation failed.");
+		m_window = glfwCreateWindow(m_data.params.width, m_data.params.height, m_data.params.title, NULL, NULL);
+
+		if (m_window == nullptr)
+		{
+			LEOLOGERROR("Window creation failed.");
+		}
 
 		// set user pointer (used by the callbacks)
 		glfwSetWindowUserPointer(m_window, &m_data);
@@ -114,16 +128,10 @@ namespace leo
 		glfwSetCursorPosCallback(m_window, glfw_cursor_position_callback);
 
 		glfwMakeContextCurrent(m_window);
-		glfwSwapInterval(win_params.init_flags & WIN_FLAG_VSYNC ? 1 : 0);
+		glfwSwapInterval(m_data.params.init_flags & WIN_FLAG_VSYNC ? 1 : 0);
 	}
 
-	Window::Window(u32 width, u32 height, const std::string& title, u32 flags)
-		:
-		Window({width, height, flags, title.c_str()})
-	{
-	}
-
-	Window::~Window()
+	void Window::Destroy()
 	{
 		glfwDestroyWindow(m_window);
 	}
@@ -150,7 +158,7 @@ namespace leo
 	{
 		glfwSwapBuffers(m_window);
 
-		if (m_data.flags & WIN_FLAG_ESC_CLOSE)
+		if (m_data.params.init_flags & WIN_FLAG_ESC_CLOSE)
 		{
 			if (KeyIsPressAsButton(KEY_ESCAPE))
 			{
@@ -192,12 +200,12 @@ namespace leo
 
 	glm::uvec2 Window::Size() const
 	{
-		return glm::uvec2(m_data.width, m_data.height);
+		return glm::uvec2(m_data.params.width, m_data.params.height);
 	}
 
 	glm::uvec2 Window::HalfSize() const
 	{
-		return glm::uvec2(m_data.width / 2, m_data.height / 2);
+		return glm::uvec2(m_data.params.width / 2, m_data.params.height / 2);
 	}
 
 	//-----------------------------------------------------------
@@ -247,6 +255,50 @@ namespace leo
 		return glfwGetMouseButton(m_window, key) == GLFW_PRESS;
 	}
 
+	//-----------------------------------------------------------
+
+	void Window::DrawCircle(float centerX, float centerY, float radius, const Color& color, int segments) const
+	{
+		std::vector<glm::vec2> vertices;
+		vertices.emplace_back(centerX, centerY); // center vertex
+
+		for (int i = 0; i <= segments; ++i)
+		{
+			float theta = 2.0f * 3.14159265f * float(i) / float(segments);
+			float x = centerX + cosf(theta) * radius;
+			float y = centerY + sinf(theta) * radius;
+			vertices.emplace_back(x, y);
+		}
+
+		// 2. Convert pixels to NDC [-1,1]
+		for (auto& v : vertices)
+		{
+			v.x = (v.x / m_data.params.width) * 2.0f - 1.0f;
+			v.y = 1.0f - (v.y / m_data.params.height) * 2.0f; // flip Y
+		}
+
+		// 3. Create VAO + VBO
+		leo::VertexBuffer vb(vertices.data(), u32(sizeof(glm::vec2) * vertices.size()));
+		leo::ElementType arr[1] = { leo::ElementType::FLOAT2 };
+		leo::Layout<1> layout(arr);
+
+		leo::VertexArray vao;
+		vao.AddBuffer(std::move(vb), layout);
+
+		// 4. Create a simple shader (or reuse a shader)
+		static leo::ShaderProgram circleShader(RESOURCES_PATH"Shaders/CircleShader/basic");
+		circleShader.Bind();
+
+		glm::vec4 normalizedColor = glm::vec4(color) / 255.0f;
+		circleShader.SetUniform("u_Color", normalizedColor);
+
+		// 5. Draw
+		glBindVertexArray(vao.ID());
+		glDrawArrays(GL_TRIANGLE_FAN, 0, GLsizei(vertices.size()));
+		glBindVertexArray(0);
+
+		circleShader.UnBind();
+	}
 
 	//-----------------------------------------------------------
 

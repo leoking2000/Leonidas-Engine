@@ -135,6 +135,7 @@ namespace leo
 	public:
 		void Bind() const;
 		void UnBind() const;
+		inline u32 ID() const { return m_id; }
 	public:
 		template<u32 ELEMENTS_COUNT>
 		void AddBuffer(VertexBuffer&& vb, const Layout<ELEMENTS_COUNT>& layout, u32 start = 0, bool per_instance = false)

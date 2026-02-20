@@ -36,8 +36,9 @@ namespace leo
 
 		Window(const Window&) = delete;
 		Window& operator=(const Window&) = delete;
-
-		~Window();
+	public:
+		void Create();
+		void Destroy();
 	public:
 		// Check if window should close (KEY_ESCAPE pressed or windows close icon clicked)
 		bool ShouldClose() const;
@@ -76,6 +77,9 @@ namespace leo
 		// Check if a mouse button is being pressed
 		bool MouseButtonDown(int key) const;
 	public:
+		// Draws a filled circle in pixel space
+		void DrawCircle(float centerX, float centerY, float radius, const Color& color, int segments = 32) const;
+	public:
 		using WindowResizeCallback = std::function<void(int, int)>;
 		void SetResizeCallback(WindowResizeCallback resize_callback);
 
@@ -89,13 +93,11 @@ namespace leo
 	public:
 		struct WinData
 		{
+			WindowsParameters    params;
 			ButtonEventCallback  keyboardCallback;
 			ButtonEventCallback  mouseKeyCallback;
 			MouseMoveCallback    mouseMoveCallback;
 			WindowResizeCallback windowResizeCallback;
-			u32                  flags = WIN_FLAG_DEFAULT;
-			u32                  width;
-			u32                  height;
 		};
 	private:
 		struct GLFWwindow* m_window;
@@ -103,5 +105,4 @@ namespace leo
 		FrameTimer m_timer;
 		mutable std::array<bool, 512u> m_keyStates{}; // use in KeyIsPressAsButton
 	};
-
 }
