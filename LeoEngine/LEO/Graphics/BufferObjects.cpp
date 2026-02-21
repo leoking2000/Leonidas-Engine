@@ -22,6 +22,27 @@ namespace leo
 		return GL_STATIC_DRAW;
 	}
 
+	VertexAttributeDesc leo::GetAttributeDesc(ElementType t)
+	{
+		switch (t)
+		{
+		case ElementType::FLOAT1:  return { GL_FLOAT, 1, false, sizeof(float) };
+		case ElementType::FLOAT1_N:return { GL_FLOAT, 1, true, sizeof(float) };
+		case ElementType::FLOAT2:  return { GL_FLOAT, 2, false, 2 * sizeof(float) };
+		case ElementType::FLOAT2_N:return { GL_FLOAT, 2, true, 2 * sizeof(float) };
+		case ElementType::FLOAT3:  return { GL_FLOAT, 3, false, 3 * sizeof(float) };
+		case ElementType::FLOAT3_N:return { GL_FLOAT, 3, true, 3 * sizeof(float) };
+		case ElementType::FLOAT4:  return { GL_FLOAT, 4, false, 4 * sizeof(float) };
+		case ElementType::FLOAT4_N:return { GL_FLOAT, 4, true, 4 * sizeof(float) };
+		case ElementType::UCHAR3:  return { GL_UNSIGNED_BYTE, 3, false, 3 * sizeof(unsigned char) };
+		case ElementType::UCHAR3_N:return { GL_UNSIGNED_BYTE, 3, true, 3 * sizeof(unsigned char) };
+		case ElementType::UCHAR4:  return { GL_UNSIGNED_BYTE, 4, false, 4 * sizeof(unsigned char) };
+		case ElementType::UCHAR4_N:return { GL_UNSIGNED_BYTE, 4, true, 4 * sizeof(unsigned char) };
+		case ElementType::MAT4:    return { GL_FLOAT, 4, false, sizeof(glm::vec4) * 4 };
+		default: LEOASSERT(false, "Unknown ElementType"); return { 0,0,false,0 };
+		}
+	}
+
 	// ---------------- VertexBuffer ----------------
 
 	VertexBuffer::VertexBuffer(const void* data, u32 size, BufferUsage usage)

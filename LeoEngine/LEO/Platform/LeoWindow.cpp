@@ -94,7 +94,7 @@ namespace leo
 
 	Window::Window(u32 width, u32 height, const std::string& title, u32 flags)
 		:
-		Window({width, height, flags, title.c_str()})
+		Window(leo::WindowsParameters{width, height, title.c_str(), flags})
 	{
 	}
 

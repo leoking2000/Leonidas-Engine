@@ -13,3 +13,5 @@
 #include "Platform/LeoWindow.h"
 
 #include "Graphics/LeoGraphics.h"
+
+#include "Core/Application.h"

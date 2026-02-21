@@ -21,8 +21,8 @@ namespace leo
 	{
 		u32          width       = 1600;
 		u32          height      = 900;
-		u32          init_flags  = WIN_FLAG_DEFAULT;
 		const char*  title       = "Leonidas Engine";
+		u32          init_flags  = WIN_FLAG_DEFAULT;
 	};
 
 	void WINInitialization();
@@ -100,8 +100,8 @@ namespace leo
 			WindowResizeCallback windowResizeCallback;
 		};
 	private:
-		struct GLFWwindow* m_window;
-		WinData m_data;
+		struct GLFWwindow* m_window = nullptr;
+		WinData m_data = {};
 		FrameTimer m_timer;
 		mutable std::array<bool, 512u> m_keyStates{}; // use in KeyIsPressAsButton
 	};
