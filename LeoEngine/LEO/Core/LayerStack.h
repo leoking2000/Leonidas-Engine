@@ -38,6 +38,7 @@ namespace leo
 		}
 	public:
 		void ApplyPending();
+		void Clean();
 	public:
 		auto begin()       { return m_layerStack.begin();  }
 		auto end()         { return m_layerStack.end();    }

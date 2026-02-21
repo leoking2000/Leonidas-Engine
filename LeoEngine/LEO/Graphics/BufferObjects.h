@@ -37,6 +37,7 @@ namespace leo
 	class VertexBuffer
 	{
 	public:
+		VertexBuffer() = default;
 		VertexBuffer(const void* data, u32 size, BufferUsage usage = BufferUsage::Static);
 
 		VertexBuffer(const VertexBuffer& other) = delete;
@@ -50,12 +51,13 @@ namespace leo
 		void Bind() const;
 		void UnBind() const;
 	private:
-		u32 m_id;
+		u32 m_id = 0;
 	};
 
 	class IndexBuffer
 	{
 	public:
+		IndexBuffer() = default;
 		IndexBuffer(const u32* data, u32 count, BufferUsage usage = BufferUsage::Static);
 
 		IndexBuffer(const IndexBuffer& other) = delete;
@@ -71,8 +73,8 @@ namespace leo
 
 		inline u32 GetCount() const { return m_count; }
 	private:
-		u32 m_id;
-		u32 m_count;
+		u32 m_id    = 0;
+		u32 m_count = 0;
 	};
 
 	/*
@@ -82,14 +84,17 @@ namespace leo
 	class Layout
 	{
 	public:
-		Layout(ElementType* arr)
+		Layout(ElementType* element_arr)
 		{
-			LEOASSERT(arr != nullptr, "Element type array is null");
+			LEOASSERT(element_arr != nullptr, "Element type array is null");
 			m_stride = 0;
 			for (u32 i = 0; i < ELEMENTS_COUNT; i++)
 			{
-				m_arr[i] = arr[i];
-				m_stride += GetAttributeDesc(arr[i]).size_bytes;
+				if (element_arr != nullptr)
+				{
+					m_arr[i] = element_arr[i];
+					m_stride += GetAttributeDesc(element_arr[i]).size_bytes;
+				}
 			}
 		}
 
@@ -97,8 +102,8 @@ namespace leo
 		inline u32 GetStride() const { return m_stride; }
 		inline u32 GetCount() const { return ELEMENTS_COUNT; }
 	private:
-		ElementType m_arr[ELEMENTS_COUNT];
-		u32 m_stride;
+		ElementType m_arr[ELEMENTS_COUNT] = {};
+		u32 m_stride = 0;
 	};
 
 	class VertexArray
@@ -145,6 +150,6 @@ namespace leo
 
 		u32 m_id;
 		std::vector<VertexBuffer> m_buffers;
-		IndexBuffer m_indexBuffer = IndexBuffer(nullptr, 0); // default empty
+		IndexBuffer m_indexBuffer; // default empty
 	};
 }

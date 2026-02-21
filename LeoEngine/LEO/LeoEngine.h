@@ -6,10 +6,6 @@
 
 #include "Log/Log.h"
 
-#include "ECS/EntityManager.h"
-#include "ECS/ComponentArray.h"
-#include "ECS/ComponentStoreSparse.h"
-
 #include "Platform/LeoWindow.h"
 
 #include "Graphics/LeoGraphics.h"

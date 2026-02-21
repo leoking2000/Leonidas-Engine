@@ -52,6 +52,7 @@ namespace leo
     public:
         using TexSize = glm::vec<3, u32>;
     public:
+        Texture() = default;
         Texture(u32 width, u32 height, TextureFormat format = TextureFormat::RGBA8UB, u8* data = nullptr);
 
         Texture(TextureDimensions dimensions, TexSize size, TextureFormat format,
@@ -83,6 +84,7 @@ namespace leo
     private:
         struct TextureParameters
         {
+            TextureParameters() = default;
             TextureParameters(TextureDimensions dimensions, TexSize size,
                 TextureFormat format,
                 TextureMinFiltering min_filter, TextureMagFiltering mag_filter,
@@ -109,7 +111,7 @@ namespace leo
     private:
         u32 m_id = 0;
         bool m_minimap = false;
-        TextureParameters m_params;
+        TextureParameters m_params = {};
     private:
         friend class FrameBuffer;
         static u32 TYPE[4];

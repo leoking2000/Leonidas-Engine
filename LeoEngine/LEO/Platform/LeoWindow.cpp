@@ -98,11 +98,21 @@ namespace leo
 	{
 	}
 
+	Window::~Window()
+	{
+		Destroy();
+	}
+
 	//-----------------------------------------------------------
 
 	void Window::Create()
 	{
 		LEOASSERT(g_glfwInnit == true, "WIN system needs to be Initialized to create window call LEO::WINInitialization()");
+
+		if (m_window != nullptr)
+		{
+			glfwDestroyWindow(m_window);
+		}
 
 		// window hits
 		glfwWindowHint(GLFW_RESIZABLE, m_data.params.init_flags & WIN_FLAG_RESIZABLE ? GL_TRUE : GL_FALSE);
@@ -133,7 +143,11 @@ namespace leo
 
 	void Window::Destroy()
 	{
-		glfwDestroyWindow(m_window);
+		if (m_window != nullptr)
+		{
+			glfwDestroyWindow(m_window);
+			m_window = nullptr;
+		}
 	}
 
 	//-----------------------------------------------------------

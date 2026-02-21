@@ -36,6 +36,8 @@ namespace leo
 
 		Window(const Window&) = delete;
 		Window& operator=(const Window&) = delete;
+
+		~Window();
 	public:
 		void Create();
 		void Destroy();

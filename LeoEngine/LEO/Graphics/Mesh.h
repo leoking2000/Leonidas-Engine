@@ -30,6 +30,7 @@ namespace leo
     {
     public:
         // Constructors
+        Mesh() = default;
         Mesh(DefaultMesh shape);
         Mesh(DefaultMesh shape, const glm::mat4* model_arr, u32 count);
 

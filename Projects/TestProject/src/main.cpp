@@ -8,39 +8,52 @@ class TestLayer : public leo::Layer
 {
 public:
 
+	virtual void OnCreate() override
+	{
+		shader = leo::ShaderProgram(RESOURCES_PATH"/TestProject/basicTex");
+		cube = leo::Mesh::GenerateCube();
+
+		leo::ImageData image = leo::ReadImageData(RESOURCES_PATH"/TestProject/brick1.jpg");
+
+		texture = leo::Texture(image.width, image.height, leo::TextureFormat::RGBA8UB, image.data.get());
+	}
+
 	virtual void OnUpdate(leo::f32 dt) override
 	{
 		leo::Window& window = leo::Application::Get().GetWindow();
-		window.SetTitle(std::format("FPS: {}", int(window.FPS())).c_str());
-
-		glm::vec2 center = window.HalfSize();
-
-		offset += speed * window.DeltaTime();
-
-		if (center.x + offset > 2 * center.x)
-		{
-			speed *= -1.0f;
-			offset = center.x;
-		}
-		else if (center.x + offset < 0)
-		{
-			offset = -center.x;
-			speed *= -1.0f;
-		}
+		glm::uvec2 size = window.Size();
 
 		// Do the Rendering here for now since Renderer does to exits
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		window.DrawCircle(center.x + offset, center.y, 50, LEO_DARKBLUE);
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, -1.0f, 0.0f));
+		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+		leo::f32 aspect = (float)size.x / (float)size.y;
+		glm::mat4 proj = glm::perspective(1.0472f, aspect, 0.1f, 100.0f);
+		
+		shader.Bind();
+		texture.Bind(1);
+
+		shader.SetUniform("mv_matrix", view * model);
+		shader.SetUniform("proj_matrix", proj);
+		shader.SetUniform("samp", 1);
+
+		cube.Draw();
+
+		shader.UnBind();
 	}
 
 private:
+	leo::ShaderProgram shader;
+	leo::Mesh cube;
+	leo::Texture texture;
 	leo::f32 offset = 0.0f;
 	leo::f32 speed = 800.0f;
 };
-
-
 
 int main(void) 
 {

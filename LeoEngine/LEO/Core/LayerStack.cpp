@@ -11,11 +11,10 @@ namespace leo
             m_toPush.clear();
 
             for (auto& layer : pending) {
-                layer->OnCreate();
+                layer->OnCreate(); // OnCreate can PushLayer
                 m_layerStack.push_back(std::move(layer));
             }
         }
-        m_toPush.clear(); // Clear the push queue
 
         // Remove queued layers
         for (Layer* layerToRemove : m_toRemove)
@@ -32,5 +31,16 @@ namespace leo
             }
         }
         m_toRemove.clear(); // Clear the remove queue
+    }
+
+    void LayerStack::Clean()
+    {
+        ApplyPending();
+
+        for (auto& layer : m_layerStack)
+        {
+            layer->OnDestroy();
+        }
+        m_layerStack.clear();
     }
 }

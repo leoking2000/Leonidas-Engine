@@ -7,11 +7,6 @@
 
 namespace leo
 {
-    ImageData::~ImageData()
-    {
-        FreeImageData(*this);
-    }
-
     std::string ReadFile(const std::string& filepath)
     {
         std::ifstream input_file(filepath);
@@ -36,29 +31,44 @@ namespace leo
         ImageData image_data;
 
         stbi_set_flip_vertically_on_load(1);
-        image_data.data = stbi_load((filepath).c_str(), &image_data.width, &image_data.height, &image_data.bpp, 4);
 
-        if (image_data.data == nullptr)
+        int width, height, bpp;
+        u8* raw = stbi_load(filepath.c_str(), &width, &height, &bpp, 4);
+
+        if (raw == nullptr)
         {
             LEOLOGERROR("Failed to read image data From: {}", filepath);
-            stbi_uc* data_error = new stbi_uc[16]{
-                    255,   0, 255, 255, /**/   0,   0,   0, 255,
-                      0,   0,   0, 255, /**/ 255,   0, 255, 255
+
+            // Fallback 2x2 magenta checker
+            u8 fallback[16] = {
+                255,   0, 255, 255,   0,   0,   0, 255,
+                  0,   0,   0, 255, 255,   0, 255, 255
             };
+
+            u8* fallbackHeap = new u8[16];
+            memcpy(fallbackHeap, fallback, 16);
+
             image_data.width = 2;
             image_data.height = 2;
             image_data.bpp = 4;
-            image_data.data = data_error;
+            image_data.data.reset(fallbackHeap);
+
+            return image_data;
         }
+
+        image_data.width = width;
+        image_data.height = height;
+        image_data.bpp = bpp;
+
+        image_data.data.reset(raw);
 
         return image_data;
     }
 
-    void FreeImageData(ImageData image_data)
+    void ImageDataDeleter::operator()(u8* ptr) const
     {
-        if (image_data.data)
-        {
-            stbi_image_free(image_data.data);
+        if (ptr != nullptr) {
+            stbi_image_free(ptr);
         }
     }
 }

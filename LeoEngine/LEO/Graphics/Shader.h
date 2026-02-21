@@ -10,6 +10,7 @@ namespace leo
 	class ShaderProgram
 	{
 	public:
+		ShaderProgram() = default;
 		ShaderProgram(const std::string& filepath);
 		ShaderProgram(const char* vertSrc, const char* fragSrc);
 		ShaderProgram(const char* vertSrc, const char* geoSrc, const char* fragSrc);
@@ -52,7 +53,7 @@ namespace leo
 		i32 GetLocation(const std::string& name) const;
 		bool IsValid() const;
 	private:
-		u32 m_program_id;
+		u32 m_program_id = 0;
 		mutable std::unordered_map<std::string, i32> m_uniforms; // storing uniforms locations
 	};
 }

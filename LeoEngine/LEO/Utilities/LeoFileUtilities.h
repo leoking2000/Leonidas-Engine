@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <memory>
 #include "LeoTypes.h"
 
 namespace leo
@@ -8,17 +9,27 @@ namespace leo
 
 	std::string DirNameOf(const std::string& filepath);
 
-	struct ImageData
+	struct ImageDataDeleter
 	{
-		i32 width  = 0;
-		i32 height = 0;
-		i32 bpp    = 0;
-		u8* data   = nullptr;
+		void operator()(u8* ptr) const;
+	};
 
-		~ImageData();
+	class ImageData
+	{
+	public:
+		ImageData() = default;
+
+		ImageData(ImageData&&) noexcept = default;
+		ImageData& operator=(ImageData&&) noexcept = default;
+
+		ImageData(const ImageData&) = delete;
+		ImageData& operator=(const ImageData&) = delete;
+	public:
+		i32 width = 0;
+		i32 height = 0;
+		i32 bpp = 0;
+		std::unique_ptr<u8, ImageDataDeleter> data;
 	};
 
 	ImageData ReadImageData(const std::string& filepath);
-
-	void FreeImageData(ImageData data);
 }

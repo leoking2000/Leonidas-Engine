@@ -25,6 +25,8 @@ namespace leo
 	{
 		s_Application = nullptr;
 
+		m_layerStack.Clean();
+
 		m_window.Destroy();
 		leo::WINTerminate();
 	}
@@ -50,6 +52,8 @@ namespace leo
 			{
 				layer->OnUpdate(dt);
 			}
+
+			m_entityManager.Update(dt);
 
 			m_window.EndFrame();
 		}
