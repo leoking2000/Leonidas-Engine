@@ -10,6 +10,6 @@ namespace leo
         std::string note = "";
         const char* sourceFile = "";
         const char* sourceFunctionName = "";
-        i32 sourceLine = 0;
+        int sourceLine = 0;
     };
 }

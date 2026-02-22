@@ -9,7 +9,7 @@ namespace leo
 
 	Application::Application(const WindowsParameters& win_params)
 		:
-		m_window(win_params)
+		m_window(win_params, false)
 	{
 		LEOASSERT(s_Application == nullptr, "Application is already created!, there can be only one Application!");
 
@@ -17,6 +17,34 @@ namespace leo
 
 		leo::WINInitialization();
 		m_window.Create();
+
+		m_window.SetKeyboardCallback([&](int key, int action) {
+			switch (action)
+			{
+			case KEY_PRESS: {
+				KeyPressedEvent e;
+				e.keyCode = key;
+				e.isRepeat = false;
+				RaiseEvent(e);
+				}
+				break;
+			case KEY_REPEAT: {
+				KeyPressedEvent e;
+				e.keyCode = key;
+				e.isRepeat = true;
+				RaiseEvent(e);
+			}
+				break;
+			case KEY_RELEASE: {
+				KeyReleasedEvent e;
+				e.keyCode = key;
+				RaiseEvent(e);
+			}
+				break;
+			default:
+				break;
+			}
+		});
 
 		leo::GraphicsInitialization();
 	}
@@ -37,7 +65,8 @@ namespace leo
 
 		while (m_isRunning)
 		{
-			m_window.BeginFrame();
+			m_window.PollEvents();
+			m_timer.Tick();
 
 			if (m_window.ShouldClose())
 			{
@@ -47,7 +76,7 @@ namespace leo
 
 			m_layerStack.ApplyPending();
 
-			f32 dt = m_window.DeltaTime();
+			f32 dt = m_timer.DeltaTime();
 			for (auto& layer : m_layerStack)
 			{
 				layer->OnUpdate(dt);
@@ -55,7 +84,7 @@ namespace leo
 
 			m_entityManager.Update(dt);
 
-			m_window.EndFrame();
+			m_window.SwapBuffers();
 		}
 
 	}

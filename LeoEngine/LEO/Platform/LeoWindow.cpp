@@ -1,6 +1,3 @@
-#include <thread>
-#include <glad/glad.h>
-#include <LEO/Graphics/LeoGraphics.h>
 #include <GLFW/glfw3.h> 
 #include <LEO/Log/Log.h>
 #include "LeoWindow.h"
@@ -9,7 +6,7 @@ namespace leo
 {
 	static bool g_glfwInnit = false;
 
-	void glfw_error_callback(int code, const char* description)
+	static void glfw_error_callback(int code, const char* description)
 	{
 		LEOLOGERROR("GLFW error {} : {}", code, description);
 	}
@@ -43,13 +40,12 @@ namespace leo
 
 	//-----------------------------------------------------------
 
-	void glfw_window_size_callback(GLFWwindow* glfw_window, int width, int height)
+	static void glfw_window_size_callback(GLFWwindow* glfw_window, int width, int height)
 	{
 		Window::WinData* data = reinterpret_cast<Window::WinData*>(glfwGetWindowUserPointer(glfw_window));
 
-		data->params.width = (u32)width;
-		data->params.height = (u32)height;
-		glViewport(0, 0, width, height);
+		data->params.width = (unsigned int)width;
+		data->params.height = (unsigned int)height;
 
 		if (data->windowResizeCallback)
 		{
@@ -57,7 +53,7 @@ namespace leo
 		}
 	}
 
-	void glfw_key_callback(GLFWwindow* glfw_window, int key, int scancode, int action, int mods)
+	static void glfw_key_callback(GLFWwindow* glfw_window, int key, int scancode, int action, int mods)
 	{
 		Window::WinData* data = reinterpret_cast<Window::WinData*>(glfwGetWindowUserPointer(glfw_window));
 
@@ -67,7 +63,7 @@ namespace leo
 		}
 	}
 
-	void glfw_mouse_button_callback(GLFWwindow* glfw_window, int button, int action, int mods)
+	static void glfw_mouse_button_callback(GLFWwindow* glfw_window, int button, int action, int mods)
 	{
 		Window::WinData* data = reinterpret_cast<Window::WinData*>(glfwGetWindowUserPointer(glfw_window));
 		if (data->mouseKeyCallback)
@@ -87,14 +83,18 @@ namespace leo
 
 	//-----------------------------------------------------------
 
-	Window::Window(WindowsParameters win_params)
+	Window::Window(WindowsParameters win_params, bool create)
 	{
 		m_data.params = win_params;
+
+		if (create) {
+			Create();
+		}
 	}
 
-	Window::Window(u32 width, u32 height, const std::string& title, u32 flags)
+	Window::Window(u32 width, u32 height, const std::string& title, u32 flags, bool create)
 		:
-		Window(leo::WindowsParameters{width, height, title.c_str(), flags})
+		Window(leo::WindowsParameters{ width, height, title.c_str(), flags }, create)
 	{
 	}
 
@@ -121,7 +121,7 @@ namespace leo
 		// TODO: add fullscreen support
 
 		// create the window
-		m_window = glfwCreateWindow(m_data.params.width, m_data.params.height, m_data.params.title, NULL, NULL);
+		m_window = glfwCreateWindow(m_data.params.width, m_data.params.height, m_data.params.title.c_str(), NULL, NULL);
 
 		if (m_window == nullptr)
 		{
@@ -162,47 +162,30 @@ namespace leo
 		glfwSetWindowShouldClose(m_window, true);
 	}
 
-	void Window::BeginFrame()
+	void Window::PollEvents()
 	{
 		glfwPollEvents();
-		m_timer.Tick();
-	}
-
-	void Window::EndFrame()
-	{
-		glfwSwapBuffers(m_window);
 
 		if (m_data.params.init_flags & WIN_FLAG_ESC_CLOSE)
 		{
-			if (KeyIsPressAsButton(KEY_ESCAPE))
+			if (glfwGetKey(m_window, KEY_ESCAPE) == GLFW_PRESS)
 			{
 				Close(); // close window
 			}
 		}
 	}
 
-	//-----------------------------------------------------------
-
-	f32 leo::Window::DeltaTime() const
+	void Window::SwapBuffers()
 	{
-		return m_timer.DeltaTime();
-	}
-
-	f32 Window::Time() const
-	{
-		return (f32)m_timer.TotalTime();
-	}
-
-	u32 leo::Window::FPS() const
-	{
-		return (u32)m_timer.FPS();
+		glfwSwapBuffers(m_window);
 	}
 
 	//-----------------------------------------------------------
 
-	void Window::SetTitle(const std::string& title) const
+	void Window::SetTitle(const std::string& title)
 	{
 		glfwSetWindowTitle(m_window, title.c_str());
+		m_data.params.title = title;
 	}
 
 	void Window::SetVsync(bool vsync)
@@ -235,83 +218,6 @@ namespace leo
 	void Window::SetMouseVisibility(bool visible)
 	{
 		glfwSetInputMode(m_window, GLFW_CURSOR, visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
-	}
-
-	//-----------------------------------------------------------
-
-	bool Window::KeyDown(int key) const
-	{
-		return glfwGetKey(m_window, key) == GLFW_PRESS;
-	}
-
-	bool Window::KeyIsPressAsButton(int key) const
-	{
-		if (key < 0 || key >= 512) 
-		{
-			return false;
-		}
-
-		if (KeyDown(key) && m_keyStates[key] == false)
-		{
-			m_keyStates[key] = true;
-			return true;
-		}
-		else if (!KeyDown(key))
-		{
-			m_keyStates[key] = false;
-		}
-
-		return false;
-	}
-
-	bool Window::MouseButtonDown(int key) const
-	{
-		return glfwGetMouseButton(m_window, key) == GLFW_PRESS;
-	}
-
-	//-----------------------------------------------------------
-
-	void Window::DrawCircle(float centerX, float centerY, float radius, const Color& color, int segments) const
-	{
-		std::vector<glm::vec2> vertices;
-		vertices.emplace_back(centerX, centerY); // center vertex
-
-		for (int i = 0; i <= segments; ++i)
-		{
-			float theta = 2.0f * 3.14159265f * float(i) / float(segments);
-			float x = centerX + cosf(theta) * radius;
-			float y = centerY + sinf(theta) * radius;
-			vertices.emplace_back(x, y);
-		}
-
-		// 2. Convert pixels to NDC [-1,1]
-		for (auto& v : vertices)
-		{
-			v.x = (v.x / m_data.params.width) * 2.0f - 1.0f;
-			v.y = 1.0f - (v.y / m_data.params.height) * 2.0f; // flip Y
-		}
-
-		// 3. Create VAO + VBO
-		leo::VertexBuffer vb(vertices.data(), u32(sizeof(glm::vec2) * vertices.size()));
-		leo::ElementType arr[1] = { leo::ElementType::FLOAT2 };
-		leo::Layout<1> layout(arr);
-
-		leo::VertexArray vao;
-		vao.AddBuffer(std::move(vb), layout);
-
-		// 4. Create a simple shader (or reuse a shader)
-		static leo::ShaderProgram circleShader(RESOURCES_PATH"Shaders/CircleShader/basic");
-		circleShader.Bind();
-
-		glm::vec4 normalizedColor = glm::vec4(color) / 255.0f;
-		circleShader.SetUniform("u_Color", normalizedColor);
-
-		// 5. Draw
-		glBindVertexArray(vao.ID());
-		glDrawArrays(GL_TRIANGLE_FAN, 0, GLsizei(vertices.size()));
-		glBindVertexArray(0);
-
-		circleShader.UnBind();
 	}
 
 	//-----------------------------------------------------------

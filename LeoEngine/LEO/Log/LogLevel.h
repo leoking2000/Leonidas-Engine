@@ -1,10 +1,9 @@
 #pragma once
 #include <string_view>
-#include <LEO/Utilities/LeoTypes.h>
 
 namespace leo
 {
-    enum LogLevel : u8
+    enum LogLevel
     {
         NONE    = 0u,
         FATAL   = 1u,

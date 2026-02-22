@@ -9,6 +9,8 @@ class TestLayer : public leo::Layer
 public:
 	virtual void OnCreate() override
 	{
+		leo::GetDefaultLogChannel().SetLoggingLevel(leo::VERBOSE);
+
 		shader = leo::ShaderProgram(RESOURCES_PATH"TestProject/basicTex");
 		cube = leo::Mesh::GenerateCube();
 
@@ -19,6 +21,11 @@ public:
 
 		leo::Color c = leo::SKYBLUE;
 		glClearColor(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
+	}
+
+	virtual void OnEvent(leo::Event& e)
+	{
+		LEOLOGVERBOSE("{}", e.ToString());
 	}
 
 	virtual void OnUpdate(leo::f32 dt) override

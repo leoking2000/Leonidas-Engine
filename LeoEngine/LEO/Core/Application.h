@@ -1,8 +1,9 @@
 #pragma once
 #include <LEO/Platform/LeoWindow.h>
-#include "ECS/EntityManager.h"
-#include "ECS/ComponentArray.h"
-#include "ECS/ComponentStoreSparse.h"
+#include <LEO/Utilities/LeoTimer.h>
+#include <LEO/ECS/EntityManager.h>
+#include <LEO/ECS/ComponentArray.h>
+#include <LEO/ECS/ComponentStoreSparse.h>
 #include "LayerStack.h"
 
 namespace leo
@@ -24,9 +25,11 @@ namespace leo
 		static Application& Get();
 	private:
 		Window m_window;
-		bool m_isRunning = false;
 		LayerStack m_layerStack;
 		EntityManager m_entityManager;
+	public:
+		FrameTimer m_timer;
+		bool m_isRunning = false;
 	};
 }
 
