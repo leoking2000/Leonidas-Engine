@@ -9,7 +9,7 @@ namespace leo
 {
     std::string ReadFile(const std::string& filepath)
     {
-        std::ifstream input_file(filepath);
+        std::ifstream input_file(filepath, std::ios::binary);
 
         if (!input_file.is_open())
         {
@@ -40,13 +40,19 @@ namespace leo
             LEOLOGERROR("Failed to read image data From: {}", filepath);
 
             // Fallback 2x2 magenta checker
-            u8 fallback[16] = {
+            const u8 fallback[16] = {
                 255,   0, 255, 255,   0,   0,   0, 255,
                   0,   0,   0, 255, 255,   0, 255, 255
             };
 
-            u8* fallbackHeap = new u8[16];
-            memcpy(fallbackHeap, fallback, 16);
+            u8* fallbackHeap = static_cast<u8*>(std::malloc(16));
+            if (!fallbackHeap)
+            {
+                LEOLOGERROR("Fallback allocation failed for image: {}", filepath);
+                return image_data; // empty image
+            }
+
+            std::memcpy(fallbackHeap, fallback, 16);
 
             image_data.width = 2;
             image_data.height = 2;
@@ -58,7 +64,7 @@ namespace leo
 
         image_data.width = width;
         image_data.height = height;
-        image_data.bpp = bpp;
+        image_data.bpp = 4;
 
         image_data.data.reset(raw);
 

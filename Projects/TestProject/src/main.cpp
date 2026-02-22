@@ -7,15 +7,18 @@
 class TestLayer : public leo::Layer
 {
 public:
-
 	virtual void OnCreate() override
 	{
-		shader = leo::ShaderProgram(RESOURCES_PATH"/TestProject/basicTex");
+		shader = leo::ShaderProgram(RESOURCES_PATH"TestProject/basicTex");
 		cube = leo::Mesh::GenerateCube();
 
-		leo::ImageData image = leo::ReadImageData(RESOURCES_PATH"/TestProject/brick1.jpg");
+		leo::ImageData image = leo::ReadImageData(RESOURCES_PATH"TestProject/brick1.jpg");
 
 		texture = leo::Texture(image.width, image.height, leo::TextureFormat::RGBA8UB, image.data.get());
+
+
+		leo::Color c = leo::SKYBLUE;
+		glClearColor(c.r / 255.0f, c.g / 255.0f, c.b / 255.0f, c.a / 255.0f);
 	}
 
 	virtual void OnUpdate(leo::f32 dt) override
@@ -24,7 +27,6 @@ public:
 		glm::uvec2 size = window.Size();
 
 		// Do the Rendering here for now since Renderer does to exits
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glEnable(GL_DEPTH_TEST);

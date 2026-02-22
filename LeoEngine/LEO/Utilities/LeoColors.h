@@ -1,3 +1,4 @@
+#pragma once
 #include <glm/glm.hpp>
 
 namespace leo
@@ -5,21 +6,21 @@ namespace leo
 	using Color = glm::u8vec4;
 
 	// Some Basic Colors
-	#define LEO_WHITE        leo::Color{ 255, 255, 255, 255 }
-	#define LEO_BLACK        leo::Color{   0,   0,   0, 255 }
-	#define LEO_BLANK        leo::Color{   0,   0,   0,   0 } // Blank (Transparent)
-	#define LEO_RED			 leo::Color{ 255,   0,   0, 255 }
-	#define LEO_DARKRED		 leo::Color{ 149,   6,   6, 255 }
-	#define LEO_GREEN		 leo::Color{   0, 255,   0, 255 }
-	#define LEO_DARKGREEN	 leo::Color{   6,  64,  43, 255 }
-	#define LEO_FORESTGREEN  leo::Color{  46, 111,  64, 255 }
-	#define LEO_BLEU		 leo::Color{   0,   0, 255, 255 }
-	#define LEO_DARKBLUE	 leo::Color{  17,  17, 132, 255 }
-	#define LEO_SKYBLUE		 leo::Color{ 130, 200, 229, 255 }
-	#define LEO_GRAY     	 leo::Color{ 137, 137, 137, 255 }
-	#define LEO_DARKGRAY 	 leo::Color{  53,  62,  67, 255 }
-	#define LEO_YELLOW 		 leo::Color{ 255, 222,  33, 255 }
-	#define LEO_GOLD		 leo::Color{ 239, 191,   4, 255 }
-	#define LEO_MAGENTA    	 leo::Color{ 255,  29, 206, 255 }
-	#define LEO_ERROR_COLOR	 leo::Color{ 255,   0, 255, 255 }
+	inline const Color WHITE{ 255, 255, 255, 255 };
+	inline const Color BLACK{ 0,   0,   0, 255 };
+	inline const Color BLANK{ 0,   0,   0,   0 }; // Blank (Transparent)
+	inline const Color RED{ 255,   0,   0, 255 };
+	inline const Color DARKRED{ 149,   6,   6, 255 };
+	inline const Color GREEN{ 0, 255,   0, 255 };
+	inline const Color DARKGREEN{ 6,  64,  43, 255 };
+	inline const Color FORESTGREEN{ 46, 111,  64, 255 };
+	inline const Color BLUE{ 0,   0, 255, 255 };
+	inline const Color DARKBLUE{ 17,  17, 132, 255 };
+	inline const Color SKYBLUE{ 130, 200, 229, 255 };
+	inline const Color GRAY{ 137, 137, 137, 255 };
+	inline const Color DARKGRAY{ 53,  62,  67, 255 };
+	inline const Color YELLOW{ 255, 222,  33, 255 };
+	inline const Color GOLD{ 239, 191,   4, 255 };
+	inline const Color MAGENTA{ 255,  29, 206, 255 };
+	inline const Color ERROR_COLOR{ 255,   0, 255, 255 };
 }

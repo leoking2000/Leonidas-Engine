@@ -1,3 +1,6 @@
 // Hint files help the Visual Studio IDE interpret Visual C++ identifiers
 // such as names of functions and macros.
 // For more information see https://go.microsoft.com/fwlink/?linkid=865984
+
+
+#define EVENT_CLASS(name, type, to_string_body, __VA_ARGS__) class name : public Event { public: name() = default; EVENT_CLASS_METHODS(type) virtual std::string ToString() const override { return to_string_body } __VA_ARGS__ }
