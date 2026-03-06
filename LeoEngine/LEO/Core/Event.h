@@ -64,16 +64,16 @@ namespace leo
 
 
 EVENT_CLASS(WindowCloseEvent, EventType::WindowClose, GetName();, );
-EVENT_CLASS(WindowResizeEvent, EventType::WindowResize, std::format("WindowResizeEvent: {}, {}", width, height); , u32 width; u32 height;);
+EVENT_CLASS(WindowResizeEvent, EventType::WindowResize, std::format("WindowResizeEvent: {}, {}", width, height); , u32 width = 0; u32 height = 0;);
 
-EVENT_CLASS(KeyPressedEvent, EventType::KeyPressed, std::format("KeyPressedEvent: {} (repeat={})", keyCode, isRepeat); , i32 keyCode; bool isRepeat;);
-EVENT_CLASS(KeyReleasedEvent, EventType::KeyReleased, std::format("KeyReleasedEvent: {}", keyCode);, i32 keyCode;);
+EVENT_CLASS(KeyPressedEvent, EventType::KeyPressed, std::format("KeyPressedEvent: {} (repeat={})", keyCode, isRepeat); , i32 keyCode = -1; bool isRepeat = false;);
+EVENT_CLASS(KeyReleasedEvent, EventType::KeyReleased, std::format("KeyReleasedEvent: {}", keyCode);, i32 keyCode = -1;);
 
-EVENT_CLASS(MouseButtonPressedEvent, EventType::MouseButtonPressed, std::format("MouseButtonPressedEvent: {}", code);, i32 code; f32 x; f32 y;);
-EVENT_CLASS(MouseButtonReleasedEvent, EventType::MouseButtonReleased, std::format("MouseButtonReleasedEvent: {}", code);, i32 code; f32 x; f32 y;);
+EVENT_CLASS(MouseButtonPressedEvent, EventType::MouseButtonPressed, std::format("MouseButtonPressedEvent: {}", code);, i32 code = -1; f32 x = 0.0f; f32 y = 0.0f;);
+EVENT_CLASS(MouseButtonReleasedEvent, EventType::MouseButtonReleased, std::format("MouseButtonReleasedEvent: {}", code);, i32 code = 0; f32 x = 0.0f; f32 y = 0.0f;);
 
 EVENT_CLASS(MouseMovedEvent, EventType::MouseMoved, std::format("MouseMovedEvent: {}, {}", x, y);,f32 x; f32 y;);
-EVENT_CLASS(MouseScrolledEvent, EventType::MouseScrolled, std::format("MouseScrolledEvent: {}, {}", offset_x, offset_y);, f32 offset_x; f32 offset_y; f32 x; f32 y;);
+EVENT_CLASS(MouseScrolledEvent, EventType::MouseScrolled, std::format("MouseScrolledEvent: {}, {}", offset_x, offset_y);, f32 offset_x = 0.0f; f32 offset_y = 0.0f; f32 x = 0.0f; f32 y = 0.0f;);
 
 }
 

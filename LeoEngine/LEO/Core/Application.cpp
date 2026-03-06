@@ -18,33 +18,7 @@ namespace leo
 		leo::WINInitialization();
 		m_window.Create();
 
-		m_window.SetKeyboardCallback([&](int key, int action) {
-			switch (action)
-			{
-			case KEY_PRESS: {
-				KeyPressedEvent e;
-				e.keyCode = key;
-				e.isRepeat = false;
-				RaiseEvent(e);
-				}
-				break;
-			case KEY_REPEAT: {
-				KeyPressedEvent e;
-				e.keyCode = key;
-				e.isRepeat = true;
-				RaiseEvent(e);
-			}
-				break;
-			case KEY_RELEASE: {
-				KeyReleasedEvent e;
-				e.keyCode = key;
-				RaiseEvent(e);
-			}
-				break;
-			default:
-				break;
-			}
-		});
+		SetWindowCallbacks();
 
 		leo::GraphicsInitialization();
 	}
@@ -117,5 +91,79 @@ namespace leo
 	{
 		return *s_Application;
 	}
+
+    void Application::SetWindowCallbacks()
+    {
+        // ---------------- Window Resize ----------------
+        m_window.SetResizeCallback([this](int width, int height){
+            WindowResizeEvent event;
+            event.width = static_cast<u32>(width);
+            event.height = static_cast<u32>(height);
+
+            RaiseEvent(event);
+        });
+
+        // ---------------- Keyboard ----------------
+        m_window.SetKeyboardCallback([this](int key, int action){
+            switch (action){
+                case KEY_PRESS:
+                {
+                    KeyPressedEvent event;
+                    event.keyCode = key;
+                    event.isRepeat = false;
+                    RaiseEvent(event);
+                    break;
+                }
+
+                case KEY_REPEAT:
+                {
+                    KeyPressedEvent event;
+                    event.keyCode = key;
+                    event.isRepeat = true;
+                    RaiseEvent(event);
+                    break;
+                }
+
+                case KEY_RELEASE:
+                {
+                    KeyReleasedEvent event;
+                    event.keyCode = key;
+                    RaiseEvent(event);
+                    break;
+                }
+            }
+         });
+
+        // ---------------- Mouse Button ----------------
+        m_window.SetMouseButtonCallBack([this](int button, int action){
+            glm::vec2 mousePos = m_window.MousePos();
+
+            if (action == KEY_PRESS)
+            {
+                MouseButtonPressedEvent event;
+                event.code = button;
+                event.x = mousePos.x;
+                event.y = mousePos.y;
+                RaiseEvent(event);
+            }
+            else if (action == KEY_RELEASE)
+            {
+                MouseButtonReleasedEvent event;
+                event.code = button;
+                event.x = mousePos.x;
+                event.y = mousePos.y;
+                RaiseEvent(event);
+            }
+        });
+
+        // ---------------- Mouse Move ----------------
+        m_window.SetMouseMoveCallback([this](float x, float y){
+            MouseMovedEvent event;
+            event.x = x;
+            event.y = y;
+
+            RaiseEvent(event);
+        });
+    }
 
 }

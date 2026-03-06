@@ -24,6 +24,8 @@ namespace leo
 	public:
 		static Application& Get();
 	private:
+		void SetWindowCallbacks();
+	private:
 		Window m_window;
 		LayerStack m_layerStack;
 		EntityManager m_entityManager;
