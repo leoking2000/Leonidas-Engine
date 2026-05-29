@@ -2,13 +2,13 @@
 #include "LEO/LeoEngine.h"
 
 
-class SandBoxLayer : public LEO::Layer
+class SandBoxLayer : public leo::Layer
 {
 public:
     virtual void OnCreate() override;    
-    virtual void OnUpdate() override;
+    virtual void OnUpdate(leo::f32) override;
 private:
-    LEO::EntityManager m_entityManager;
+    leo::EntityManager m_entityManager;
 };
 
 
