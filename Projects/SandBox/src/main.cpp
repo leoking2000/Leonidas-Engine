@@ -1,20 +1,14 @@
-#include <LEO/LeoEngine.h>
-#include "SandBox.h"
+#include <iostream>
+#include "geo/IOUtils.h"
+
 
 int main(int argc, char** argv)
 {
-	leo::WindowsParameters win_params;
-	win_params.width = 1600;
-	win_params.height = 900;
-	win_params.title = "Sandbox";
-	win_params.init_flags = leo::WIN_FLAG_ESC_CLOSE;
+	geo::GeometryDumpData cube = geo::LoadOBJ(RESOURCES_PATH"models/cube/cube.obj");
+	std::cout << cube.ToString() << '\n';
 
-	leo::Application app(win_params);
-
-	app.GetLayerStack().PushLayer<SandBoxLayer>();
-	app.Run();
+	geo::GeometryDumpData bunny = geo::LoadOBJ(RESOURCES_PATH"models/bunny/bunny.obj");
+	std::cout << bunny.ToString() << '\n';
 
 	return 0;
 }
-
-

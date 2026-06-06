@@ -39,6 +39,6 @@ target_include_directories("${PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}
 
 ############ link libraries ############
 
-target_link_libraries("${PROJECT_NAME}" PRIVATE LeoEngine glm)
+target_link_libraries("${PROJECT_NAME}" PRIVATE LeoEngine glm tiny_obj_loader)
 
 ########################################
