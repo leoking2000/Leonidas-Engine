@@ -117,66 +117,60 @@ namespace geo::io
     // Internal helpers
     // ============================================================
 
-    namespace
+    // Compute and store a bounding box from the point set.
+    static void ComputeBBox(GeometryDumpData& data)
     {
-        // Compute and store a bounding box from the point set.
-        void ComputeBBox(GeometryDumpData& data)
-        {
-            if (data.points.empty()) return;
+        if (data.points.empty()) return;
 
-            data.bbox.MakeEmpty();
-            for (const glm::vec3& p : data.points)
+        data.bbox.MakeEmpty();
+        for (const glm::vec3& p : data.points)
+        {
+            data.bbox.ExpandBy(p);
+        }
+    }
+
+    // Compute per-vertex normals from triangle soup when normals are absent.
+    static void ComputeNormals(GeometryDumpData& data)
+    {
+        if (data.points.empty() || data.indexBuffer.empty()) return;
+
+        data.normals.assign(data.points.size(), glm::vec3(0.0f));
+
+        for (const TriangleIndex& tri : data.indexBuffer)
+        {
+            const u32 i0 = tri.vertexIndex.x;
+            const u32 i1 = tri.vertexIndex.y;
+            const u32 i2 = tri.vertexIndex.z;
+
+            if (i0 >= data.points.size() || i1 >= data.points.size() || i2 >= data.points.size())
             {
-                data.bbox.ExpandBy(p);
+                continue;
             }
+
+            const glm::vec3& p0 = data.points[i0];
+            const glm::vec3& p1 = data.points[i1];
+            const glm::vec3& p2 = data.points[i2];
+
+            const glm::vec3 e1  = p1 - p0;
+            const glm::vec3 e2  = p2 - p0;
+            const glm::vec3 faceNormal = glm::cross(e1, e2);
+
+            data.normals[i0] += faceNormal;
+            data.normals[i1] += faceNormal;
+            data.normals[i2] += faceNormal;
         }
 
-        // Compute per-vertex normals from triangle soup when normals are absent.
-        // Uses angle-weighted face normals accumulated per vertex.
-        void ComputeNormals(GeometryDumpData& data)
+        for (glm::vec3& n : data.normals)
         {
-            if (data.points.empty() || data.indexBuffer.empty()) return;
-
-            data.normals.assign(data.points.size(), glm::vec3(0.0f));
-
-            for (const TriangleIndex& tri : data.indexBuffer)
-            {
-                const u32 i0 = tri.vertexIndex.x;
-                const u32 i1 = tri.vertexIndex.y;
-                const u32 i2 = tri.vertexIndex.z;
-
-                if (i0 >= data.points.size() ||
-                    i1 >= data.points.size() ||
-                    i2 >= data.points.size())
-                {
-                    continue;
-                }
-
-                const glm::vec3& p0 = data.points[i0];
-                const glm::vec3& p1 = data.points[i1];
-                const glm::vec3& p2 = data.points[i2];
-
-                const glm::vec3 e1  = p1 - p0;
-                const glm::vec3 e2  = p2 - p0;
-                const glm::vec3 faceNormal = glm::cross(e1, e2);
-
-                // Accumulate (weighted by area via un-normalised cross product)
-                data.normals[i0] += faceNormal;
-                data.normals[i1] += faceNormal;
-                data.normals[i2] += faceNormal;
+            const float len = glm::length(n);
+            if (len > 1e-12f) {
+                n /= len;
             }
-
-            for (glm::vec3& n : data.normals)
-            {
-                const float len = glm::length(n);
-                if (len > 1e-6f)
-                    n /= len;
-                else
-                    n = glm::vec3(0.0f, 1.0f, 0.0f); // degenerate fallback
+            else {
+                n = glm::vec3(0.0f, 1.0f, 0.0f); // degenerate fallback
             }
         }
-
-    } // anonymous namespace
+    }
 
     // ============================================================
     // OBJ Loader
@@ -210,7 +204,9 @@ namespace geo::io
         if (!success)
         {
             GEOLOGERROR("Failed to load OBJ: " << path);
-            return {};
+            data.geometryType = GeometryType::UNKNOWN;
+            data.fileType = FileType::UNKNOWN;
+            return data;
         }
 
         // --------------------------------------------------------
@@ -220,11 +216,7 @@ namespace geo::io
         data.points.reserve(attrib.vertices.size() / 3);
         for (size_t i = 0; i + 2 < attrib.vertices.size(); i += 3)
         {
-            data.points.emplace_back(
-                attrib.vertices[i + 0],
-                attrib.vertices[i + 1],
-                attrib.vertices[i + 2]
-            );
+            data.points.emplace_back(attrib.vertices[i + 0], attrib.vertices[i + 1], attrib.vertices[i + 2]);
         }
 
         // Load raw OBJ normal buffer (per-attribute, not per-vertex).
@@ -234,11 +226,7 @@ namespace geo::io
             data.normals.reserve(attrib.normals.size() / 3);
             for (size_t i = 0; i + 2 < attrib.normals.size(); i += 3)
             {
-                data.normals.emplace_back(
-                    attrib.normals[i + 0],
-                    attrib.normals[i + 1],
-                    attrib.normals[i + 2]
-                );
+                data.normals.emplace_back(attrib.normals[i + 0], attrib.normals[i + 1], attrib.normals[i + 2]);
             }
         }
 
@@ -248,10 +236,7 @@ namespace geo::io
             data.texcoords.reserve(attrib.texcoords.size() / 2);
             for (size_t i = 0; i + 1 < attrib.texcoords.size(); i += 2)
             {
-                data.texcoords.emplace_back(
-                    attrib.texcoords[i + 0],
-                    attrib.texcoords[i + 1]
-                );
+                data.texcoords.emplace_back(attrib.texcoords[i + 0], attrib.texcoords[i + 1]);
             }
         }
 
@@ -261,11 +246,7 @@ namespace geo::io
             data.colors.reserve(attrib.colors.size() / 3);
             for (size_t i = 0; i + 2 < attrib.colors.size(); i += 3)
             {
-                data.colors.emplace_back(
-                    attrib.colors[i + 0],
-                    attrib.colors[i + 1],
-                    attrib.colors[i + 2]
-                );
+                data.colors.emplace_back(attrib.colors[i + 0], attrib.colors[i + 1], attrib.colors[i + 2]);
             }
         }
 
@@ -290,13 +271,6 @@ namespace geo::io
 
         // --------------------------------------------------------
         // Index buffer — preserving OBJ per-face-vertex indices
-        //
-        // tinyobj stores separate per-face-vertex indices for position,
-        // normal, and texcoord (matching the OBJ "f v/vt/vn" syntax).
-        // We preserve all three in TriangleIndex so downstream code can
-        // perform its own attribute look-up or flat-shading decisions.
-        //
-        // colorIndex is left zeroed: OBJ has no per-face color indices.
         // --------------------------------------------------------
 
         for (const tinyobj::shape_t& shape : shapes)
@@ -304,33 +278,33 @@ namespace geo::io
             if (shape.mesh.num_face_vertices.empty()) continue;
 
             // Build a TriangleGroup for each shape / material group
-            const u32 groupStart = static_cast<u32>(data.indexBuffer.size());
+            const u32 groupStart = u32(data.indexBuffer.size());
 
-            size_t indexOffset = 0;
+            u32 indexOffset = 0;
             for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
             {
-                const int fv = static_cast<int>(shape.mesh.num_face_vertices[f]);
+                const u32 fv = shape.mesh.num_face_vertices[f];
 
                 if (fv != 3)
                 {
                     GEOLOGWARN("Skipping non-triangle face in OBJ file (fv=" << fv << ")");
-                    indexOffset += static_cast<size_t>(fv);
+                    indexOffset += fv;
                     continue;
                 }
 
                 TriangleIndex tri;
 
-                for (int v = 0; v < 3; v++)
+                for (u32 v = 0; v < 3; v++)
                 {
                     const tinyobj::index_t& idx = shape.mesh.indices[indexOffset + v];
 
-                    tri.vertexIndex[v] = (idx.vertex_index   >= 0) ? static_cast<u32>(idx.vertex_index)   : 0u;
-                    tri.normalIndex[v] = (idx.normal_index   >= 0) ? static_cast<u32>(idx.normal_index)   : 0u;
-                    tri.coordsIndex[v] = (idx.texcoord_index >= 0) ? static_cast<u32>(idx.texcoord_index) : 0u;
-                    tri.colorIndex[v]  = tri.vertexIndex[v]; // no per-face color in OBJ
+                    tri.vertexIndex[v] = (idx.vertex_index   >= 0) ? u32(idx.vertex_index)   : 0u;
+                    tri.normalIndex[v] = (idx.normal_index   >= 0) ? u32(idx.normal_index)   : 0u;
+                    tri.coordsIndex[v] = (idx.texcoord_index >= 0) ? u32(idx.texcoord_index) : 0u;
+                    tri.colorIndex[v]  = (idx.vertex_index   >= 0) ? u32(idx.vertex_index)   : 0u;
                 }
 
-                data.indexBuffer.push_back(tri);
+                data.indexBuffer.emplace_back(tri);
                 indexOffset += 3;
             }
 
@@ -338,15 +312,14 @@ namespace geo::io
             if (!shape.mesh.material_ids.empty())
             {
                 const int matId = shape.mesh.material_ids[0];
-                const std::string matName = (matId >= 0 && matId < (int)materials.size())
-                    ? materials[matId].name
-                    : std::string();
+                const std::string matName = 
+                    (matId >= 0 && matId < (int)materials.size()) ? materials[matId].name : std::string();
 
                 TriangleGroup grp;
                 grp.start    = groupStart;
                 grp.lenght   = static_cast<u32>(data.indexBuffer.size()) - groupStart;
                 grp.material = matName;
-                data.groups.push_back(std::move(grp));
+                data.groups.emplace_back(std::move(grp));
             }
         }
 
@@ -363,11 +336,11 @@ namespace geo::io
         }
 
         GEOLOGINFO("Loaded OBJ: " << path
-            << " | " << data.points.size()     << " vertices"
-            << " | " << data.normals.size()    << " normals"
-            << " | " << data.texcoords.size()  << " texcoords"
-            << " | " << data.indexBuffer.size() << " triangles"
-            << " | " << data.groups.size()      << " groups"
+            << " | " << data.points.size()       << " vertices"
+            << " | " << data.normals.size()      << " normals"
+            << " | " << data.texcoords.size()    << " texcoords"
+            << " | " << data.indexBuffer.size()  << " triangles"
+            << " | " << data.groups.size()       << " groups"
             << " | " << data.materialsMap.size() << " materials");
 
         return data;
@@ -409,15 +382,15 @@ namespace geo::io
         {
             switch (t)
             {
-            case PLYType::F32: return 4;
-            case PLYType::F64: return 8;
-            case PLYType::I8:  return 1;
-            case PLYType::U8:  return 1;
-            case PLYType::I16: return 2;
-            case PLYType::U16: return 2;
-            case PLYType::I32: return 4;
-            case PLYType::U32: return 4;
-            default:           return 0;
+                case PLYType::F32: return 4;
+                case PLYType::F64: return 8;
+                case PLYType::I8:  return 1;
+                case PLYType::U8:  return 1;
+                case PLYType::I16: return 2;
+                case PLYType::U16: return 2;
+                case PLYType::I32: return 4;
+                case PLYType::U32: return 4;
+                default:           return 0;
             }
         }
 
@@ -1352,8 +1325,10 @@ namespace geo::io
     {
         PointCloud pc;
 
-        // For a true point cloud (no index buffer), the attribute arrays are
-        // already per-vertex and aligned — copy directly.
+        // -------------------------------------------------------
+        // Case 1: true point cloud — attributes are already stored
+        // one-per-point and aligned; copy directly.
+        // -------------------------------------------------------
         if (!data.HasIndices())
         {
             pc.points = data.points;
@@ -1362,17 +1337,52 @@ namespace geo::io
             return pc;
         }
 
-        // For a triangle mesh the three attribute arrays can have different
-        // sizes because OBJ uses independent indices for positions, normals,
-        // and colors. We expand each triangle's three corners into individual
-        // point entries so that index i always refers to the same point across
-        // all three arrays.
-        pc.points.reserve(data.indexBuffer.size() * 3);
-        pc.normals.reserve(data.indexBuffer.size() * 3);
-        pc.colors.reserve(data.indexBuffer.size() * 3);
+        // -------------------------------------------------------
+        // Case 2: triangle mesh.
+        //
+        // OBJ uses three independent index channels (vertexIndex,
+        // normalIndex, colorIndex), so the raw attribute arrays are
+        // NOT aligned — data.normals[i] is NOT the normal for
+        // data.points[i].  We must flatten by the combined key
+        // (vi, ni, ci) so that after flattening every index i
+        // refers to the same geometric corner across all three arrays.
+        //
+        // A cube is the canonical example:
+        //   8 positions × 3 distinct normals per corner = 24 unique
+        //   (vi, ni) keys.  Naïve per-triangle expansion produces 36
+        //   (6 faces × 2 triangles × 3 verts); deduplication here
+        //   collapses that back to the correct 24.
+        //
+        // Algorithm: walk every triangle corner, hash its (vi, ni, ci)
+        // tuple, and emit a new entry only when the tuple is new.
+        // -------------------------------------------------------
+
+        struct Key
+        {
+            u32 vi, ni, ci;
+            bool operator==(const Key& o) const
+            {
+                return vi == o.vi && ni == o.ni && ci == o.ci;
+            }
+        };
+
+        struct KeyHash
+        {
+            size_t operator()(const Key& k) const
+            {
+                // FNV-inspired mixing — same scheme as MakeMeshData
+                size_t h = 2166136261u;
+                auto mix = [&](u32 v) { h ^= v; h *= 16777619u; };
+                mix(k.vi); mix(k.ni); mix(k.ci);
+                return h;
+            }
+        };
 
         const glm::vec3 defaultNormal(0.0f, 1.0f, 0.0f);
         const glm::vec3 defaultColor(1.0f, 1.0f, 1.0f);
+
+        std::unordered_map<Key, u32, KeyHash> cache;
+        cache.reserve(data.indexBuffer.size() * 3);
 
         for (const TriangleIndex& tri : data.indexBuffer)
         {
@@ -1381,6 +1391,11 @@ namespace geo::io
                 const u32 vi = tri.vertexIndex[v];
                 const u32 ni = tri.normalIndex[v];
                 const u32 ci = tri.colorIndex[v];
+
+                // Skip corners we have already emitted
+                if (cache.count(Key{ vi, ni, ci })) continue;
+
+                cache[Key{ vi, ni, ci }] = static_cast<u32>(pc.points.size());
 
                 pc.points.push_back(vi < data.points.size()
                     ? data.points[vi]
